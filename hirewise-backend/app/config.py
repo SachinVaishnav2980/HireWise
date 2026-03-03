@@ -7,7 +7,13 @@ class Settings(BaseSettings):
     mongodb_db_name: str = "hirewise"
     
     # Google Gemini
-    gemini_api_key: str
+    gemini_api_key: str = ""
+    
+    # Groq API (for interview module)
+    groq_api_key: str = ""
+    
+    # Vapi (for voice interviews)
+    vapi_public_key: str = ""
     
     # CORS
     frontend_url: str = "http://localhost:8000"

@@ -261,77 +261,50 @@ const API = {
         }
     },
 
-    // Interviews
+    // Interviews — voice only (Vapi)
     async getInterviews() {
-        const interviews = Storage.getInterviews();
-        return {
-            success: true,
-            data: interviews
-        };
-    },
-
-    async createInterview(interviewData) {
-        const interview = {
-            interviewId: 'int_' + Date.now(),
-            userId: Storage.getUser()?.userId,
-            date: new Date().toISOString(),
-            duration: 0,
-            score: 0,
-            questions: [],
-            answers: [],
-            feedback: null,
-            status: 'pending',
-            ...interviewData
-        };
-        
-        Storage.saveInterview(interview);
-        
-        return {
-            success: true,
-            data: interview,
-            message: 'Interview created'
-        };
-    },
-
-    async submitInterview(interviewId, responses) {
-        // Mock feedback generation for now
-        const score = Math.floor(Math.random() * 30) + 70;
-        
-        const feedback = {
-            toneAnalysis: 'Confident and professional tone detected.',
-            bodyLanguage: 'Good eye contact and posture.',
-            strengths: [
-                'Clear communication',
-                'Technical knowledge',
-                'Problem-solving approach'
-            ],
-            improvements: [
-                'Could elaborate more on examples',
-                'Practice STAR method for behavioral questions'
-            ]
-        };
-        
-        const interview = Storage.getInterviewById(interviewId);
-        if (interview) {
-            interview.score = score;
-            interview.feedback = feedback;
-            interview.answers = responses;
-            interview.status = 'completed';
-            interview.completedAt = new Date().toISOString();
-        }
-        
         const user = Storage.getUser();
-        if (user) {
-            user.totalPoints = (user.totalPoints || 0) + score;
-            user.streak = (user.streak || 0) + 1;
-            Storage.saveUser(user);
+        if (!user || !user.userId) return { success: false, message: 'User not found' };
+        try {
+            const response = await fetch(`${this.baseURL}/interview/sessions/${user.userId}`);
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
         }
-        
-        return {
-            success: true,
-            data: { interview, feedback, score },
-            message: 'Interview submitted successfully'
-        };
+    },
+
+    async startVapiInterview(formData) {
+        try {
+            const response = await fetch(`${this.baseURL}/interview/vapi/start`, {
+                method: 'POST',
+                body: formData
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async submitVapiReport(sessionId, transcript) {
+        try {
+            const response = await fetch(`${this.baseURL}/interview/vapi/report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, transcript })
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async getInterviewReport(sessionId) {
+        try {
+            const response = await fetch(`${this.baseURL}/interview/report/${sessionId}`);
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
     },
 
     // JD Matcher - Connected to Backend

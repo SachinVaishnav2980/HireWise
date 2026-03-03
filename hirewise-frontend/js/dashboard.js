@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDashboardStats();
     initCalendar();
     initPerformanceChart();
-    loadModals();
 });
 
 function initDashboard() {
@@ -142,11 +141,13 @@ function loadViewContent(viewName) {
             }
             break;
         case 'interview':
-            // Interview modal button
-            const interviewBtn = document.getElementById('open-interview-modal');
+            // Single start button
+            const interviewBtn = document.getElementById('start-interview-btn');
             if (interviewBtn) {
-                interviewBtn.onclick = () => InterviewManager.instance.startInterview();
+                interviewBtn.onclick = () => InterviewManager.instance.openSetupModal();
             }
+            // Load past sessions
+            loadInterviewSessions();
             break;
         case 'jobs':
             loadJobs();
@@ -788,6 +789,40 @@ function uploadResume() {
     };
     
     input.click();
+}
+
+async function loadInterviewSessions() {
+    const container = document.getElementById('interview-sessions-list');
+    if (!container) return;
+    
+    try {
+        const result = await API.getInterviews();
+        if (!result.success || !result.data || result.data.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No interview sessions yet. Start your first interview!</p>';
+            return;
+        }
+        
+        container.innerHTML = result.data.slice(0, 10).map(s => {
+            const statusColor = s.status === 'completed' ? 'text-green-400' : 'text-yellow-400';
+            const date = s.created_at ? new Date(s.created_at).toLocaleDateString() : '';
+            return `
+                <div class="flex items-center justify-between p-3 rounded-lg border border-accent-cyan/10 hover:border-accent-cyan/30 transition cursor-pointer" 
+                     onclick="InterviewManager.instance.loadSessionReport('${s.session_id}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm">&#x1F399;</span>
+                        <div>
+                            <p class="text-sm font-medium">${s.candidate_name || 'Candidate'}</p>
+                            <p class="text-xs text-gray-500">${date}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-semibold ${statusColor}">${s.status || 'unknown'}</span>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Error loading sessions:', err);
+        container.innerHTML = '<p class="text-gray-500 text-sm">Failed to load sessions.</p>';
+    }
 }
 
 function loadJobs() {

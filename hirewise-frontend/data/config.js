@@ -7,7 +7,7 @@ const AppConfig = {
     
     // API Configuration
     api: {
-        baseURL: process.env.API_URL || 'http://localhost:8000/api',
+        baseURL: 'http://localhost:8001/api',
         timeout: 30000,
         retryAttempts: 3
     },
@@ -112,8 +112,8 @@ const AppConfig = {
     
     // Development Settings
     dev: {
-        debug: process.env.NODE_ENV !== 'production',
-        mockAPI: true, // Set to false when backend is ready
+        debug: false,
+        mockAPI: false,
         logLevel: 'info' // 'debug', 'info', 'warn', 'error'
     }
 };

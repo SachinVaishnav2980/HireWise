@@ -218,6 +218,18 @@ input:invalid:not(:placeholder-shown) + .field-error {
     form {
         font-size: 0.875rem;
     }
+    
+    .bg-primary-dark-secondary {
+        padding: 1.25rem !important;
+    }
+}
+
+@media (max-width: 380px) {
+    form input,
+    form select {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+    }
 }
 
 /* Animation for form transitions */

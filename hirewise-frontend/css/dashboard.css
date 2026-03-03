@@ -792,13 +792,13 @@ aside {
     }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1024px) and (min-width: 769px) {
     aside {
         width: 200px;
     }
     
     main {
-        margin-left: 200px;
+        margin-left: 200px !important;
     }
     
     .dashboard-layout {
@@ -827,6 +827,21 @@ aside {
     #performance-chart {
         max-height: 220px;
     }
+    
+    /* Modal responsive */
+    .modal {
+        max-width: 98% !important;
+        max-height: 95vh !important;
+        margin: 0.5rem;
+    }
+    
+    .modal-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .modal-body {
+        padding: 0.75rem 1rem;
+    }
 }
 
 @media (max-width: 640px) {
@@ -842,3 +857,79 @@ aside {
         font-size: 1.125rem;
     }
 }
+
+/* ===== Enhanced Button Interactions ===== */
+button, .btn, [role="button"] {
+    cursor: pointer;
+}
+
+/* Action buttons with lift effect */
+.bg-accent-cyan {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+button.bg-accent-cyan:hover,
+a.bg-accent-cyan:hover {
+    box-shadow: 0 6px 20px rgba(0, 172, 193, 0.35);
+}
+
+button.bg-accent-cyan:active,
+a.bg-accent-cyan:active {
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 0 2px 8px rgba(0, 172, 193, 0.25);
+}
+
+/* Loading state for buttons */
+button.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+button.loading::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Sidebar mobile z-index */
+aside#sidebar {
+    z-index: 40;
+}
+
+/* Ripple effect for nav items */
+.nav-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(0, 172, 193, 0.15), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.nav-item:hover::after {
+    opacity: 1;
+}
+
+/* Smooth view transition cards */
+.view-content .bg-primary-dark-secondary\/40 {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.view-content .bg-primary-dark-secondary\/40:hover {
+    box-shadow: 0 4px 24px rgba(0, 172, 193, 0.1);
+}
+

@@ -18,14 +18,20 @@
     
     <!-- Top Navigation -->
     <nav class="fixed w-full top-0 z-50 bg-primary-dark-secondary/40 backdrop-blur-md border-b border-accent-cyan/20">
-        <div class="px-6 py-4">
+        <div class="px-4 sm:px-6 py-3 sm:py-4">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
+                    <!-- Mobile sidebar toggle -->
+                    <button id="sidebar-toggle" class="md:hidden text-white p-2 mr-2 hover:bg-accent-cyan/10 rounded-lg transition" aria-label="Toggle sidebar">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
                     <img src="assets/images/logo.svg" alt="HireWise Logo" class="h-8 w-8" onerror="this.style.display='none'">
-                    <span class="text-2xl font-bold text-accent-cyan">HireWise</span>
+                    <span class="text-xl sm:text-2xl font-bold text-accent-cyan">HireWise</span>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="text-sm text-gray-400">
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <div class="text-xs sm:text-sm text-gray-400 hidden sm:block">
                         <span>🔥 Streak: <span id="streak-count" class="text-accent-cyan font-bold">0</span> days</span>
                         <span class="ml-4">⭐ Points: <span id="points-count" class="text-accent-cyan font-bold">0</span></span>
                     </div>
@@ -50,8 +56,11 @@
     </nav>
 
     <div class="flex pt-16">
+        <!-- Mobile Sidebar Overlay -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden" onclick="closeSidebar()"></div>
+        
         <!-- Left Sidebar -->
-        <aside class="fixed left-0 w-64 h-full bg-primary-dark-secondary/40 backdrop-blur-md border-r border-accent-cyan/20 overflow-y-auto">
+        <aside id="sidebar" class="fixed left-0 w-64 h-full bg-primary-dark-secondary/40 backdrop-blur-md border-r border-accent-cyan/20 overflow-y-auto z-40">
             <nav class="p-4 space-y-2">
                 <a href="#" data-view="dashboard" class="nav-item active flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-accent-cyan/10 transition">
                     <span>📊</span>
@@ -85,7 +94,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="ml-64 flex-1 p-8">
+        <main class="ml-0 md:ml-64 flex-1 p-4 sm:p-6 md:p-8">
             <!-- Dashboard View -->
             <div id="dashboard-view" class="view-content">
                 <div class="flex items-center justify-between mb-6">
@@ -175,10 +184,12 @@
             <!-- Other Views (Hidden by default) -->
             <div id="resume-view" class="view-content hidden">
                 <h1 class="text-3xl font-bold mb-6">My Resume</h1>
-                <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-6">
+                <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6">
                     <div id="resume-preview" class="text-center py-12">
-                        <p class="text-gray-400">No resume uploaded yet</p>
-                        <button class="mt-4 px-6 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">
+                        <div class="text-6xl mb-4">📄</div>
+                        <p class="text-gray-400 mb-2">No resume uploaded yet</p>
+                        <p class="text-sm text-gray-500 mb-4">Upload your resume to get started with ATS checks and job matching</p>
+                        <button onclick="uploadResume()" class="mt-2 px-8 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-all duration-300 hover:shadow-lg hover:shadow-accent-cyan/25 hover:-translate-y-0.5 active:translate-y-0 font-semibold">
                             Upload Resume
                         </button>
                     </div>
@@ -187,35 +198,118 @@
 
             <div id="ats-view" class="view-content hidden">
                 <h1 class="text-3xl font-bold mb-6">ATS Compatibility Checker</h1>
-                <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-6">
-                    <button type="button" id="open-ats-modal" class="px-6 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">
-                        Check Resume ATS Score
-                    </button>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+                    <!-- Main Action Card -->
+                    <div class="md:col-span-2 lg:col-span-2 bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6 hover:border-accent-cyan/50 transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="text-4xl">✅</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2">Check Your Resume Score</h3>
+                                <p class="text-gray-400 mb-4">Analyze your resume against Applicant Tracking Systems. Get a detailed breakdown of formatting, keywords, and compatibility scoring.</p>
+                                <button type="button" id="open-ats-modal" class="px-8 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-all duration-300 hover:shadow-lg hover:shadow-accent-cyan/25 hover:-translate-y-0.5 active:translate-y-0 font-semibold">
+                                    Check Resume ATS Score
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Info Card -->
+                    <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-3 text-accent-cyan">What We Check</h3>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Keyword optimization</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Format compatibility</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Section structure</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Content relevance</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Downloadable report</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
             <div id="jdmatcher-view" class="view-content hidden">
                 <h1 class="text-3xl font-bold mb-6">Job Description Matcher</h1>
-                <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-6">
-                    <button id="open-jd-modal" class="px-6 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">
-                        Match with Job Description
-                    </button>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+                    <!-- Main Action Card -->
+                    <div class="md:col-span-2 lg:col-span-2 bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6 hover:border-accent-cyan/50 transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="text-4xl">🎯</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2">Match Your Resume to a Job</h3>
+                                <p class="text-gray-400 mb-4">Compare your resume against any job description to see how well you match. Get tailored recommendations to improve your chances.</p>
+                                <button id="open-jd-modal" class="px-8 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-all duration-300 hover:shadow-lg hover:shadow-accent-cyan/25 hover:-translate-y-0.5 active:translate-y-0 font-semibold">
+                                    Match with Job Description
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Info Card -->
+                    <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-3 text-accent-cyan">Analysis Includes</h3>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Technical skills match</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Experience alignment</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Education fit</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Keyword overlap</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Improvement tips</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
             <div id="interview-view" class="view-content hidden">
                 <h1 class="text-3xl font-bold mb-6">Take Mock Interview</h1>
-                <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-6">
-                    <button id="open-interview-modal" class="px-6 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">
-                        Start New Interview
-                    </button>
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+                    <!-- Main Action Card -->
+                    <div class="md:col-span-2 lg:col-span-2 bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6 hover:border-accent-cyan/50 transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="text-4xl">🎤</div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2">Practice with AI Interviewer</h3>
+                                <p class="text-gray-400 mb-4">Take a realistic mock interview powered by AI. Get instant feedback on your responses, tone, and body language to improve your performance.</p>
+                                <button id="open-interview-modal" class="px-8 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-all duration-300 hover:shadow-lg hover:shadow-accent-cyan/25 hover:-translate-y-0.5 active:translate-y-0 font-semibold">
+                                    Start New Interview
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Info Card -->
+                    <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6">
+                        <h3 class="text-lg font-bold mb-3 text-accent-cyan">Features</h3>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> AI-generated questions</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Video & audio recording</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Tone analysis</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Performance scoring</li>
+                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Detailed feedback</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
             <div id="jobs-view" class="view-content hidden">
                 <h1 class="text-3xl font-bold mb-6">Job Discovery</h1>
-                <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-6">
-                    <p class="text-gray-400">Job discovery feature coming soon...</p>
+                <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-8 text-center">
+                    <div class="text-6xl mb-4">💼</div>
+                    <h3 class="text-2xl font-bold mb-2">Coming Soon</h3>
+                    <p class="text-gray-400 max-w-md mx-auto mb-6">We're building a smart job discovery engine that matches your skills and preferences to the best opportunities.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-lg mx-auto">
+                        <div class="bg-primary-dark/50 rounded-lg p-3 border border-accent-cyan/10">
+                            <div class="text-2xl mb-1">🔍</div>
+                            <p class="text-xs text-gray-400">Smart Search</p>
+                        </div>
+                        <div class="bg-primary-dark/50 rounded-lg p-3 border border-accent-cyan/10">
+                            <div class="text-2xl mb-1">🤖</div>
+                            <p class="text-xs text-gray-400">AI Matching</p>
+                        </div>
+                        <div class="bg-primary-dark/50 rounded-lg p-3 border border-accent-cyan/10">
+                            <div class="text-2xl mb-1">📊</div>
+                            <p class="text-xs text-gray-400">Fit Score</p>
+                        </div>
+                        <div class="bg-primary-dark/50 rounded-lg p-3 border border-accent-cyan/10">
+                            <div class="text-2xl mb-1">🔔</div>
+                            <p class="text-xs text-gray-400">Alerts</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

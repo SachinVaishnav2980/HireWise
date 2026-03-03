@@ -533,7 +533,7 @@ class ATSChecker {
         // Check if we have atsId from backend
         if (this.currentResult.atsId) {
             // Download DOCX report from backend
-            const downloadUrl = `http://localhost:8001/api/ats/download/${this.currentResult.atsId}`;
+            const downloadUrl = `${API.baseURL}/ats/download/${this.currentResult.atsId}`;
             
             fetch(downloadUrl)
                 .then(response => {

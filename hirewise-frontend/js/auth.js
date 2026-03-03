@@ -212,11 +212,25 @@ function setupSignupForm() {
             console.log('Signup response:', response); // Debug log
             
             if (response.success) {
+                // Upload resume to backend if provided
+                const resumeFileInput = document.getElementById('signup-resume');
+                const resumeFileToUpload = resumeFileInput?.files[0];
+                if (resumeFileToUpload) {
+                    try {
+                        showNotification('Uploading resume...', 'info');
+                        await API.checkATS(resumeFileToUpload);
+                        console.log('Resume uploaded successfully during signup');
+                    } catch (uploadError) {
+                        console.error('Resume upload failed during signup:', uploadError);
+                        // Don't block signup - resume can be uploaded later
+                    }
+                }
+                
                 // Show success and redirect
                 showNotification('Account created successfully! Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
-                }, 1000);
+                }, 1500);
             } else {
                 signupError.textContent = response.message;
                 signupError.classList.remove('hidden');

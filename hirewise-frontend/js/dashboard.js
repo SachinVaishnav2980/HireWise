@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDashboard();
     initNavigation();
     initProfileMenu();
+    initSidebarToggle();
     loadUserData();
     loadDashboardStats();
     initCalendar();
@@ -46,8 +47,34 @@ function initNavigation() {
             // Show corresponding view
             const view = item.getAttribute('data-view');
             showView(view);
+            
+            // Close sidebar on mobile after clicking a nav item
+            if (window.innerWidth < 768) {
+                closeSidebar();
+            }
         });
     });
+}
+
+function initSidebarToggle() {
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay?.classList.toggle('hidden');
+        });
+    }
+}
+
+// Global function for sidebar overlay onclick
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar?.classList.remove('open');
+    overlay?.classList.add('hidden');
 }
 
 function showView(viewName) {

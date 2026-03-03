@@ -343,6 +343,71 @@ input, textarea, select {
     .modal {
         max-width: 95%;
     }
+    
+    section {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    section {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    
+    .notification {
+        left: 1rem;
+        right: 1rem;
+        top: 10px;
+    }
+}
+
+/* Mobile menu animation */
+#mobile-menu {
+    animation: slide-down-menu 0.3s ease;
+}
+
+@keyframes slide-down-menu {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced button hover for landing page */
+nav a[href^="auth.html"] {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+nav a[href^="auth.html"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 172, 193, 0.3);
+}
+
+nav a[href^="auth.html"]:active {
+    transform: translateY(0);
+}
+
+/* Hero CTA button polish */
+section a.bg-accent-cyan,
+section button.bg-accent-cyan {
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+section a.bg-accent-cyan:hover,
+section button.bg-accent-cyan:hover {
+    box-shadow: 0 8px 25px rgba(0, 172, 193, 0.4);
+    transform: translateY(-2px);
+}
+
+section a.bg-accent-cyan:active,
+section button.bg-accent-cyan:active {
+    transform: translateY(0);
 }
 
 /* Accessibility */

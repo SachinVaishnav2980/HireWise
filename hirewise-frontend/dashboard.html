@@ -257,31 +257,37 @@
             </div>
 
             <div id="interview-view" class="view-content hidden">
-                <h1 class="text-3xl font-bold mb-6">Take Mock Interview</h1>
-                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-                    <!-- Main Action Card -->
-                    <div class="md:col-span-2 lg:col-span-2 bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6 hover:border-accent-cyan/50 transition-all duration-300">
-                        <div class="flex items-start gap-4">
-                            <div class="text-4xl">🎤</div>
-                            <div class="flex-1">
-                                <h3 class="text-xl font-bold mb-2">Practice with AI Interviewer</h3>
-                                <p class="text-gray-400 mb-4">Take a realistic mock interview powered by AI. Get instant feedback on your responses, tone, and body language to improve your performance.</p>
-                                <button id="open-interview-modal" class="px-8 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-all duration-300 hover:shadow-lg hover:shadow-accent-cyan/25 hover:-translate-y-0.5 active:translate-y-0 font-semibold">
-                                    Start New Interview
-                                </button>
-                            </div>
+                <h1 class="text-3xl font-bold mb-6">AI Voice Interview</h1>
+                <div class="grid gap-6 md:grid-cols-2 mb-6">
+                    <!-- Interview Card -->
+                    <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-8 hover:border-accent-cyan/50 transition-all duration-300">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="text-5xl mb-4">&#x1F399;</div>
+                            <h3 class="text-xl font-bold mb-2">Voice Interview</h3>
+                            <p class="text-gray-400 text-sm mb-6">Have a live voice conversation with <strong class="text-accent-cyan">Laxon</strong>, our AI interviewer. Your camera &amp; mic will be active during the interview.</p>
+                            <button id="start-interview-btn" class="px-8 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition-all duration-300 hover:shadow-lg hover:shadow-accent-cyan/25 hover:-translate-y-0.5 active:translate-y-0 font-semibold">
+                                Start New Interview
+                            </button>
                         </div>
                     </div>
                     <!-- Info Card -->
-                    <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6">
-                        <h3 class="text-lg font-bold mb-3 text-accent-cyan">Features</h3>
-                        <ul class="space-y-2 text-sm text-gray-400">
-                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> AI-generated questions</li>
-                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Video & audio recording</li>
-                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Tone analysis</li>
-                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Performance scoring</li>
-                            <li class="flex items-center gap-2"><span class="text-accent-cyan">•</span> Detailed feedback</li>
-                        </ul>
+                    <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-8">
+                        <h3 class="text-lg font-bold mb-3 text-accent-cyan">How it works</h3>
+                        <ol class="space-y-3 text-sm text-gray-400 list-decimal list-inside">
+                            <li>Select an existing resume or upload a new one</li>
+                            <li>Paste the job description for the target role</li>
+                            <li>Allow camera &amp; microphone access</li>
+                            <li>Laxon conducts a real-time voice interview</li>
+                            <li>Get a detailed AI-generated report &amp; score</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Past Sessions -->
+                <div class="bg-primary-dark-secondary/40 backdrop-blur-md border border-accent-cyan/20 rounded-xl p-6">
+                    <h3 class="text-lg font-bold mb-4 text-accent-cyan">Recent Sessions</h3>
+                    <div id="interview-sessions-list" class="space-y-2">
+                        <p class="text-gray-500 text-sm">Loading sessions...</p>
                     </div>
                 </div>
             </div>
@@ -323,15 +329,15 @@
     <!-- Modals Container -->
     <div id="modals-container"></div>
 
-    <script src="js/particles.js"></script>
-    <script src="data/config.js"></script>
-    <script src="js/storage.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/auto-logout.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/interview.js"></script>
-    <script src="js/jdmatcher.js"></script>
-    <script src="js/ats-checker.js"></script>
-    <script src="js/dashboard.js"></script>
+    <script src="js/particles.js?v=4"></script>
+    <script src="data/config.js?v=4"></script>
+    <script src="js/storage.js?v=4"></script>
+    <script src="js/api.js?v=4"></script>
+    <script src="js/auto-logout.js?v=4"></script>
+    <script src="js/calendar.js?v=4"></script>
+    <script src="js/interview.js?v=4"></script>
+    <script src="js/jdmatcher.js?v=4"></script>
+    <script src="js/ats-checker.js?v=4"></script>
+    <script src="js/dashboard.js?v=4"></script>
 </body>
 </html>

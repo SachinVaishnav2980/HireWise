@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initDashboard() {
     // Set initial view
     showView('dashboard');
+    updateVisualMetrics({ totalInterviews: 0, avgScore: 0, streak: 0 });
     
     // Display current date
     const currentDateEl = document.getElementById('current-date');
@@ -216,17 +217,57 @@ async function loadDashboardStats() {
         
         if (response.success) {
             const stats = response.data;
+            const totalInterviews = Number(stats.totalInterviews) || 0;
+            const avgScore = Number(stats.avgScore) || 0;
+            const streak = Number(stats.streak) || 0;
             
-            // Update stats cards
-            document.getElementById('total-interviews').textContent = stats.totalInterviews;
-            document.getElementById('avg-score').textContent = stats.avgScore;
-            document.getElementById('streak-display').textContent = `${stats.streak} days`;
+            // Update visual metrics values
+            const totalInterviewsEl = document.getElementById('total-interviews');
+            const avgScoreEl = document.getElementById('avg-score');
+            const streakDisplayEl = document.getElementById('streak-display');
+
+            if (totalInterviewsEl) totalInterviewsEl.textContent = totalInterviews;
+            if (avgScoreEl) avgScoreEl.textContent = `${Math.round(avgScore)}%`;
+            if (streakDisplayEl) streakDisplayEl.textContent = `${streak}d`;
+
+            updateVisualMetrics({ totalInterviews, avgScore, streak });
             
             // Update recent activity
             loadRecentActivity(stats.recentInterviews);
         }
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
+    }
+}
+
+function updateVisualMetrics({ totalInterviews = 0, avgScore = 0, streak = 0 }) {
+    const sessionsBars = document.getElementById('sessions-bars');
+    const scoreOrbit = document.getElementById('score-orbit');
+    const streakTrail = document.getElementById('streak-trail');
+
+    const normalize = (value, max) => Math.max(0, Math.min(value / max, 1));
+
+    const sessionsRatio = normalize(totalInterviews, 30);
+    const scoreRatio = normalize(avgScore, 100);
+    const streakRatio = normalize(streak, 21);
+
+    if (sessionsBars) {
+        const heights = [8, 14, 20, 11, 24, 13, 18, 9, 22, 12, 17, 13];
+        const activeCount = Math.round(sessionsRatio * heights.length);
+        sessionsBars.innerHTML = heights
+            .map((height, index) => `<span class="${index < activeCount ? 'active' : ''}" style="height:${height}px"></span>`)
+            .join('');
+    }
+
+    if (scoreOrbit) {
+        scoreOrbit.style.setProperty('--metric-value', String(Math.max(scoreRatio, 0.02)));
+    }
+
+    if (streakTrail) {
+        const activeCount = Math.round(streakRatio * 12);
+        streakTrail.innerHTML = Array.from({ length: 12 }, (_, i) =>
+            `<span class="${i < activeCount ? 'active' : ''}"></span>`
+        ).join('');
     }
 }
 
@@ -304,7 +345,7 @@ function initCalendar() {
         fixedWeekCount: false,
         showNonCurrentDates: false,
         dayMaxEvents: false,
-        eventDisplay: 'list-item',
+        eventDisplay: 'block',
         displayEventTime: false,
         eventDidMount: function(info) {
             // Add class to day cell to show it has activities
@@ -333,13 +374,13 @@ function getActivityColor(activityType, status) {
     
     // Color by type for scheduled activities
     const colors = {
-        'interview': '#00acc1',
-        'ats_check': '#8b5cf6',
+        'interview': '#1F3A5F',
+        'ats_check': '#4F6D7A',
         'jd_match': '#f59e0b',
-        'practice': '#06b6d4'
+        'practice': '#374151'
     };
     
-    return colors[activityType] || '#00acc1';
+    return colors[activityType] || '#1F3A5F';
 }
 
 async function showDayActivities(dateStr) {
@@ -381,32 +422,32 @@ async function showDayActivities(dateStr) {
         let activitiesHTML = '';
         if (activities.length === 0) {
             activitiesHTML = `
-                <div class="no-activities">
-                    <div class="no-activities-icon">📅</div>
-                    <div class="no-activities-text">No activities on this day</div>
+                <div class="day-empty-state">
+                    <div style="font-size:1.05rem;margin-bottom:0.35rem;">📅</div>
+                    <div>No activities planned for this date.</div>
                 </div>
             `;
         } else {
-            activitiesHTML = `<div class="activity-list">`;
+            activitiesHTML = `<div class="day-activities-list">`;
             activities.forEach(activity => {
                 const icon = getActivityIcon(activity.activity_type);
-                const time = new Date(activity.date).toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
-                    minute: '2-digit' 
+                const time = new Date(activity.date).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit'
                 });
-                
+
                 activitiesHTML += `
-                    <div class="activity-item">
-                        <div class="activity-icon">${icon}</div>
-                        <div class="activity-content">
-                            <div class="activity-type">${activity.activity_type.replace('_', ' ')}</div>
-                            <div class="activity-title">${activity.title}</div>
-                            ${activity.description ? `<div class="activity-description">${activity.description}</div>` : ''}
-                            <div class="activity-description" style="margin-top: 0.25rem; font-size: 0.75rem;">
-                                ${time} • ${activity.status}
+                    <div class="day-activity-item">
+                        <div class="day-activity-icon">${icon}</div>
+                        <div>
+                            <div class="day-activity-head">
+                                <div class="day-activity-title">${activity.title}</div>
+                                <span class="day-status-chip ${activity.status || 'scheduled'}">${activity.status || 'scheduled'}</span>
                             </div>
+                            <div class="day-activity-meta">${activity.activity_type.replace('_', ' ')} • ${time}</div>
+                            ${activity.description ? `<div class="day-activity-description">${activity.description}</div>` : ''}
                         </div>
-                        ${activity.score ? `<div class="activity-score">${activity.score}</div>` : ''}
+                        ${activity.score ? `<div class="day-activity-score">${activity.score}</div>` : ''}
                     </div>
                 `;
             });
@@ -492,7 +533,7 @@ function getCalendarEvents() {
     return interviews.map(interview => ({
         title: 'Interview',
         start: interview.date,
-        color: interview.status === 'completed' ? '#10b981' : '#00acc1',
+        color: interview.status === 'completed' ? '#10b981' : '#1F3A5F',
         extendedProps: {
             interviewId: interview.interviewId,
             score: interview.score
@@ -508,20 +549,45 @@ function initPerformanceChart() {
         .filter(i => i.status === 'completed')
         .slice(-10); // Last 10 interviews
     
-    const labels = interviews.map((_, index) => `Interview ${index + 1}`);
+    const labels = interviews.map((interview, index) => {
+        if (interview.date) {
+            return new Date(interview.date).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        return `Session ${index + 1}`;
+    });
+
     const scores = interviews.map(i => i.score || 0);
-    
+
+    // Keep graph visible even for new users with no completed interviews yet
+    const graphLabels = labels.length > 0 ? labels : ['Start'];
+    const graphScores = scores.length > 0 ? scores : [0];
+
+    const chartCtx = ctx.getContext('2d');
+    const areaGradient = chartCtx.createLinearGradient(0, 0, 0, 260);
+    areaGradient.addColorStop(0, 'rgba(255, 205, 86, 0.34)');
+    areaGradient.addColorStop(0.45, 'rgba(255, 189, 72, 0.12)');
+    areaGradient.addColorStop(1, 'rgba(255, 189, 72, 0)');
+
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: graphLabels,
             datasets: [{
-                label: 'Interview Score',
-                data: scores,
-                borderColor: '#00acc1',
-                backgroundColor: 'rgba(0, 172, 193, 0.1)',
-                tension: 0.4,
-                fill: true
+                label: 'User Progress',
+                data: graphScores,
+                borderColor: '#f7c948',
+                borderWidth: 2.5,
+                backgroundColor: areaGradient,
+                tension: 0.38,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 5,
+                pointBorderWidth: 2,
+                pointBackgroundColor: '#ffe29a',
+                pointBorderColor: '#f6bf3b'
             }]
         },
         options: {
@@ -529,8 +595,17 @@ function initPerformanceChart() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    labels: {
-                        color: '#ffffff'
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(11, 20, 48, 0.95)',
+                    borderColor: 'rgba(247, 201, 72, 0.35)',
+                    borderWidth: 1,
+                    titleColor: '#f5f9ff',
+                    bodyColor: '#d7e7ff',
+                    displayColors: false,
+                    callbacks: {
+                        label: (context) => `Score: ${context.parsed.y}`
                     }
                 }
             },
@@ -539,18 +614,25 @@ function initPerformanceChart() {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
-                        color: '#9ca3af'
+                        color: '#87a3d4',
+                        stepSize: 20
                     },
                     grid: {
-                        color: 'rgba(0, 172, 193, 0.1)'
+                        color: 'rgba(244, 188, 63, 0.14)',
+                        drawBorder: false
                     }
                 },
                 x: {
                     ticks: {
-                        color: '#9ca3af'
+                        color: '#87a3d4',
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 7
                     },
                     grid: {
-                        color: 'rgba(0, 172, 193, 0.1)'
+                        color: 'rgba(91, 117, 181, 0.18)',
+                        borderDash: [4, 5],
+                        drawBorder: false
                     }
                 }
             }

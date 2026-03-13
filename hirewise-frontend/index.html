@@ -1,304 +1,923 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HireWise - AI-Powered Interview Practice Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/theme.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HireWise — AI-Powered Interview Practice Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Geist:wght@300;400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --display-font:'Sora','Geist',system-ui,sans-serif;
+  --bg:        #060811;
+  --surface:   #0d1117;
+  --surface2:  #111620;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.11);
+  --text:      #e2e8f0;
+  --muted:     rgba(226,232,240,0.42);
+  --muted2:    rgba(226,232,240,0.28);
+  --blue:      #3b82f6;
+  --blue-lite: #93c5fd;
+  --indigo:    #6366f1;
+  --violet:    #8b5cf6;
+  --cyan:      #22d3ee;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(94,132,214,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(94,132,214,.07) 1px,transparent 1px);background-size:62px 62px;mask-image:radial-gradient(circle at 50% 32%,rgba(0,0,0,.95),rgba(0,0,0,.3) 55%,transparent 100%);-webkit-mask-image:radial-gradient(circle at 50% 32%,rgba(0,0,0,.95),rgba(0,0,0,.3) 55%,transparent 100%)}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+
+/* enforce premium display font where Geist was used inline */
+[style*="font-family:'Geist'"]{font-family:var(--display-font)!important}
+
+.bg-flight{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.bg-bird{position:absolute;width:22px;height:11px;opacity:.9;filter:drop-shadow(0 0 10px currentColor);animation:bird-drift linear infinite}
+.bg-bird::before,.bg-bird::after{content:'';position:absolute;top:0;width:11px;height:11px;background:currentColor;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.bg-bird::before{left:0;transform:rotate(-12deg)}
+.bg-bird::after{right:0;transform:rotate(12deg)}
+.bg-bird.cyan{color:#22d3ee}
+.bg-bird.orange{color:#f59e0b}
+.bg-bird.pink{color:#ec4899}
+.bg-bird.violet{color:#a78bfa}
+
+@keyframes bird-drift{
+  0%{transform:translateX(-12vw) translateY(0) scale(var(--s,1))}
+  25%{transform:translateX(20vw) translateY(-12px) scale(var(--s,1))}
+  50%{transform:translateX(48vw) translateY(6px) scale(var(--s,1))}
+  75%{transform:translateX(76vw) translateY(-10px) scale(var(--s,1))}
+  100%{transform:translateX(110vw) translateY(2px) scale(var(--s,1))}
+}
+#scroll-progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);z-index:9999;width:0;transition:width .08s linear}
+.float-nav{background:rgba(6,8,17,0.75);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--border);border-radius:18px;box-shadow:0 2px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);transition:border-color .3s,box-shadow .3s}
+.float-nav.scrolled{border-color:var(--border2);box-shadow:0 8px 48px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)}
+.nav-link{position:relative;font-size:.875rem;font-weight:500;color:rgba(255,255,255,.52);transition:color .2s;padding-bottom:2px}
+.nav-link::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:1.5px;background:linear-gradient(90deg,var(--blue),var(--violet));border-radius:2px;transition:width .25s ease}
+.nav-link:hover{color:#fff}
+.nav-link:hover::after{width:100%}
+.btn-primary{background:var(--blue);color:#fff;font-weight:600;font-size:.875rem;padding:.625rem 1.25rem;border-radius:10px;border:none;cursor:pointer;box-shadow:0 0 0 1px rgba(59,130,246,.35),0 4px 20px rgba(59,130,246,.3);transition:background .2s,box-shadow .2s,transform .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary:hover{background:#4f92ff;box-shadow:0 0 0 1px rgba(79,146,255,.4),0 6px 28px rgba(59,130,246,.45);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:rgba(255,255,255,.65);font-size:.875rem;font-weight:500;padding:.625rem 1.125rem;border-radius:10px;border:1px solid var(--border);cursor:pointer;transition:color .2s,background .2s,border-color .2s;text-decoration:none;display:inline-flex;align-items:center}
+.btn-ghost:hover{color:#fff;background:rgba(255,255,255,.05);border-color:var(--border2)}
+.hero-cone{position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:900px;height:700px;background:conic-gradient(from 270deg at 50% 0%,transparent 50deg,rgba(59,130,246,0.18) 90deg,rgba(139,92,246,0.14) 130deg,rgba(59,130,246,0.18) 170deg,transparent 220deg);filter:blur(40px);pointer-events:none;animation:cone-pulse 6s ease-in-out infinite}
+@keyframes cone-pulse{0%,100%{opacity:.65}50%{opacity:1}}
+.hero-ambient-1{position:absolute;border-radius:50%;pointer-events:none;width:500px;height:500px;background:radial-gradient(circle,rgba(59,130,246,0.09) 0%,transparent 65%);top:0;left:50%;transform:translateX(-50%)}
+.hero-ambient-2{position:absolute;border-radius:50%;pointer-events:none;width:280px;height:280px;background:radial-gradient(circle,rgba(139,92,246,0.08) 0%,transparent 70%);top:20%;right:10%;animation:float 8s ease-in-out infinite}
+.hero-ambient-3{position:absolute;border-radius:50%;pointer-events:none;width:220px;height:220px;background:radial-gradient(circle,rgba(34,211,238,0.06) 0%,transparent 70%);top:30%;left:8%;animation:float 10s ease-in-out infinite reverse}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+.grad-text{background:linear-gradient(135deg,#fff 0%,var(--blue-lite) 45%,var(--blue) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.grad-text-warm{background:linear-gradient(135deg,var(--blue-lite) 0%,var(--violet) 60%,#ec4899 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.eyebrow{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-lite)}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px 5px 8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:999px;font-size:.76rem;font-weight:600;color:var(--blue-lite)}
+.badge-dot{width:20px;height:20px;background:rgba(59,130,246,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.badge-dot::after{content:'';width:7px;height:7px;background:var(--blue);border-radius:50%;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.product-preview{background:linear-gradient(145deg,#0d1320 0%,#0a0f1e 100%);border:1px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 0 0 1px rgba(255,255,255,0.04),0 32px 80px rgba(0,0,0,.8),0 0 60px rgba(59,130,246,.06);overflow:hidden}
+.preview-topbar{background:rgba(255,255,255,0.03);border-bottom:1px solid rgba(255,255,255,0.06);padding:12px 16px;display:flex;align-items:center;gap:8px}
+.dot-r{width:10px;height:10px;border-radius:50%;background:#ef4444;opacity:.7}
+.dot-y{width:10px;height:10px;border-radius:50%;background:#f59e0b;opacity:.7}
+.dot-g{width:10px;height:10px;border-radius:50%;background:#22c55e;opacity:.7}
+.bento-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.bento-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s,box-shadow .3s}
+.bento-card:hover{border-color:rgba(59,130,246,.22);transform:translateY(-3px);box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 30px rgba(59,130,246,.06)}
+.bento-card::before{content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(255,255,255,0.015) 0%,transparent 60%);pointer-events:none;border-radius:inherit}
+.col-span-5{grid-column:span 5}
+.col-span-7{grid-column:span 7}
+.col-span-4{grid-column:span 4}
+.col-span-8{grid-column:span 8}
+.col-span-6{grid-column:span 6}
+.col-span-3{grid-column:span 3}
+.col-span-9{grid-column:span 9}
+.col-span-12{grid-column:span 12}
+@media(max-width:768px){.col-span-5,.col-span-7,.col-span-4,.col-span-8,.col-span-6,.col-span-3,.col-span-9,.col-span-12{grid-column:span 12}}
+.icon-pill{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.score-ring{width:80px;height:80px;border-radius:50%;background:conic-gradient(#3b82f6 0% 82%,rgba(255,255,255,0.07) 82% 100%);display:flex;align-items:center;justify-content:center;position:relative}
+.score-ring::before{content:'';position:absolute;inset:7px;background:var(--surface);border-radius:50%}
+.score-inner{position:relative;z-index:1;font-size:1.1rem;font-weight:800;color:#fff;font-family:'Geist',sans-serif}
+.step-num{width:36px;height:36px;border-radius:50%;background:linear-gradient(145deg,#1d4ed8,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;color:#fff;box-shadow:0 0 20px rgba(59,130,246,.4);flex-shrink:0}
+.h-div{height:1px;max-width:1152px;margin:0 auto;background:var(--border)}
+.testi-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem;transition:border-color .3s,transform .3s}
+.testi-card:hover{border-color:rgba(59,130,246,.22);transform:translateY(-3px)}
+.logo-strip{display:flex;align-items:center;gap:2.5rem;overflow:hidden}
+.logo-strip span{font-size:1.05rem;font-weight:700;letter-spacing:-.02em;color:rgba(255,255,255,.18);white-space:nowrap;transition:color .3s;font-family:'Geist',sans-serif}
+.logo-strip span:hover{color:rgba(255,255,255,.4)}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.5rem 2rem;text-align:center;transition:border-color .3s}
+.stat-card:hover{border-color:rgba(59,130,246,.22)}
+.cta-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(59,130,246,.1) 0%,transparent 70%);pointer-events:none}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@keyframes fade-up{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fade-up .75s cubic-bezier(.16,1,.3,1) both}
+.d1{animation-delay:.08s}.d2{animation-delay:.18s}.d3{animation-delay:.30s}.d4{animation-delay:.44s}.d5{animation-delay:.60s}
+.mobile-panel{background:rgba(6,8,17,.97);border:1px solid var(--border);border-radius:16px;margin-top:8px;overflow:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#060811}
+::-webkit-scrollbar-thumb{background:rgba(59,130,246,.35);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(59,130,246,.55)}
+.grid-lines{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:32px 32px;border-radius:inherit}
+.waveform{display:flex;align-items:center;gap:3px;height:32px}
+.waveform span{display:block;width:3px;border-radius:2px;background:linear-gradient(to top,#3b82f6,#8b5cf6);animation:wave 1.4s ease-in-out infinite}
+.waveform span:nth-child(2){animation-delay:.1s}
+.waveform span:nth-child(3){animation-delay:.2s}
+.waveform span:nth-child(4){animation-delay:.3s}
+.waveform span:nth-child(5){animation-delay:.2s}
+.waveform span:nth-child(6){animation-delay:.1s}
+.waveform span:nth-child(7){animation-delay:.3s}
+@keyframes wave{0%,100%{height:8px}50%{height:28px}}
+.kw-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:.7rem;font-weight:600;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:var(--blue-lite);white-space:nowrap}
+.kw-tag.green{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);color:#86efac}
+.kw-tag.violet{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.2);color:#c4b5fd}
+.prog-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#3b82f6,#8b5cf6)}
+#theme-toggle{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.5);transition:background .2s,color .2s}
+#theme-toggle:hover{background:rgba(255,255,255,.1);color:#fff}
+
+.theme-icon-sun{display:none}
+.theme-icon-moon{display:block}
+
+.maven-timeline{position:relative;max-width:1000px;margin:0 auto}
+.maven-timeline::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.2),transparent);transform:translateX(-50%)}
+.timeline-item{display:grid;grid-template-columns:1fr 70px 1fr;gap:24px;align-items:center;margin-bottom:2.5rem}
+.timeline-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.4rem;min-height:140px}
+.timeline-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#0a0f1c;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1rem;color:#9cc2ff;font-size:.84rem;line-height:1.55}
+.timeline-step{display:flex;align-items:center;justify-content:center;position:relative}
+.timeline-dot{width:14px;height:14px;border-radius:50%;background:#e2e8f0;box-shadow:0 0 0 4px rgba(255,255,255,.05)}
+.timeline-pill{position:absolute;top:-26px;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);font-size:.7rem;font-weight:700;color:#e2e8f0;white-space:nowrap}
+
+/* Optexity-inspired integration hub */
+.integration-wrap{border:1px solid rgba(59,130,246,.35);border-radius:18px;background:rgba(12,18,34,.55);backdrop-filter:blur(6px);overflow:hidden}
+.integration-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;border-bottom:1px solid rgba(59,130,246,.25)}
+.integration-tab{height:46px;border:1px solid rgba(59,130,246,.25);border-radius:10px;background:rgba(255,255,255,.02);color:#9fbef8;font-size:.9rem;font-weight:600;transition:.2s}
+.integration-tab:hover{background:rgba(59,130,246,.08);color:#dbeafe}
+.integration-tab.active{background:rgba(59,130,246,.16);color:#eaf2ff;border-color:rgba(96,165,250,.6);box-shadow:0 0 0 1px rgba(96,165,250,.35) inset}
+
+.integration-network{position:relative;min-height:430px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border-bottom:1px solid rgba(59,130,246,.2)}
+.integration-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(96,165,250,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,.08) 1px,transparent 1px);background-size:58px 58px;opacity:.45}
+
+.center-hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:142px;height:142px;border-radius:999px;background:radial-gradient(circle at 35% 30%,#fff,#dbeafe 55%,#bfdbfe 100%);border:1px solid rgba(96,165,250,.55);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 18px rgba(59,130,246,.08),0 0 38px rgba(96,165,250,.35);z-index:3}
+.center-hub-inner{width:62px;height:62px;border-radius:999px;background:#2563eb;display:grid;place-items:center;color:#fff;font-weight:800}
+
+.net-node{position:absolute;width:94px;height:94px;border-radius:999px;background:rgba(255,255,255,.94);border:2px solid #dbeafe;color:#0f172a;display:grid;place-items:center;text-align:center;padding:8px;font-size:.66rem;font-weight:700;line-height:1.2;z-index:2;box-shadow:0 6px 18px rgba(2,6,23,.28)}
+.net-node.dark{background:#0b254f;color:#dbeafe;border-color:#1d4ed8}
+.net-node.brand{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+
+.connector{position:absolute;height:2px;background:linear-gradient(90deg,rgba(148,163,184,.35),rgba(96,165,250,.45));z-index:1}
+.connector.l1{left:19%;top:22%;width:23%}
+.connector.l2{left:17%;top:40%;width:25%}
+.connector.l3{left:20%;top:58%;width:22%}
+.connector.l4{left:17%;top:76%;width:25%}
+.connector.r1{right:19%;top:22%;width:23%}
+.connector.r2{right:17%;top:40%;width:25%}
+.connector.r3{right:20%;top:58%;width:22%}
+.connector.r4{right:17%;top:76%;width:25%}
+
+.integration-desc{padding:22px 26px;text-align:center;font-size:1.03rem;line-height:1.8;color:var(--muted);max-width:920px;margin:0 auto}
+
+/* Realistic, user-friendly benefits cockpit */
+.experience-shell{display:grid;grid-template-columns:260px 1fr;gap:18px}
+.experience-tabs{display:flex;flex-direction:column;gap:10px}
+.exp-tab{padding:14px 14px;border-radius:12px;border:1px solid rgba(96,165,250,.22);background:rgba(15,23,42,.45);text-align:left;transition:.2s;cursor:pointer}
+.exp-tab:hover{background:rgba(59,130,246,.12);border-color:rgba(96,165,250,.4)}
+.exp-tab.active{background:linear-gradient(145deg,rgba(59,130,246,.24),rgba(37,99,235,.16));border-color:rgba(96,165,250,.62);box-shadow:0 0 0 1px rgba(96,165,250,.35) inset}
+.exp-tab-title{font-size:.92rem;font-weight:700;color:#eaf2ff;margin-bottom:2px}
+.exp-tab-sub{font-size:.75rem;color:#9fbef8}
+
+.experience-preview{background:rgba(7,13,28,.68);border:1px solid rgba(96,165,250,.28);border-radius:16px;padding:18px;min-height:440px;position:relative;overflow:hidden}
+.experience-preview::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 40%);pointer-events:none}
+.exp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.exp-title{font-size:1.35rem;font-weight:720;color:#fff;letter-spacing:-.02em}
+.live-pill{padding:5px 10px;border-radius:999px;font-size:.72rem;font-weight:700;color:#93c5fd;border:1px solid rgba(96,165,250,.4);background:rgba(59,130,246,.14)}
+.exp-subtitle{font-size:.92rem;color:var(--muted);line-height:1.65;max-width:90%;margin-bottom:14px}
+
+.exp-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.exp-kpi{padding:10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.22)}
+.exp-kpi-label{font-size:.68rem;color:#93c5fd;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.exp-kpi-value{font-size:1.1rem;font-weight:720;color:#eaf2ff}
+
+.exp-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.exp-step{padding:10px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(148,163,184,.2);min-height:80px;position:relative}
+.exp-step::after{content:'';position:absolute;right:-8px;top:50%;width:16px;height:2px;background:rgba(148,163,184,.4);transform:translateY(-50%)}
+.exp-step:last-child::after{display:none}
+.exp-step-head{font-size:.7rem;color:#60a5fa;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.exp-step-text{font-size:.79rem;color:#dbeafe;line-height:1.45}
+
+.exp-outcome{padding:12px;border-radius:12px;border:1px solid rgba(34,197,94,.28);background:rgba(34,197,94,.08)}
+.exp-outcome-title{font-size:.78rem;font-weight:700;color:#86efac;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.exp-outcome-item{font-size:.85rem;color:#d1fae5;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.exp-outcome-item::before{content:'✓';color:#4ade80;font-weight:800;line-height:1.1}
+
+.exp-enter{animation:exp-enter .35s ease}
+@keyframes exp-enter{from{opacity:.35;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.exp-dynamic{margin-top:10px}
+
+/* Mode 1: Interview simulator */
+.intv-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}
+.panel{background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.22);border-radius:12px;padding:12px}
+.panel-title{font-size:.72rem;color:#93c5fd;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:8px}
+.q-item{font-size:.86rem;color:#dbeafe;line-height:1.55;padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.02);border:1px solid rgba(148,163,184,.16);margin-bottom:8px}
+.live-wave{display:flex;gap:4px;align-items:flex-end;height:34px}
+.live-wave span{width:4px;background:linear-gradient(to top,#3b82f6,#22d3ee);border-radius:2px;animation:wave-live 1.2s ease-in-out infinite}
+.live-wave span:nth-child(2){animation-delay:.1s}.live-wave span:nth-child(3){animation-delay:.2s}.live-wave span:nth-child(4){animation-delay:.3s}.live-wave span:nth-child(5){animation-delay:.15s}.live-wave span:nth-child(6){animation-delay:.25s}
+@keyframes wave-live{0%,100%{height:8px}50%{height:30px}}
+
+/* Mode 2: ATS analyzer */
+.ats-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.ats-card{padding:10px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid rgba(148,163,184,.2)}
+.ats-label{font-size:.72rem;color:#93c5fd;margin-bottom:4px}
+.ats-score{font-size:1.05rem;font-weight:700;color:#eaf2ff}
+.ats-bar{height:7px;background:rgba(148,163,184,.2);border-radius:999px;overflow:hidden;margin-top:6px}
+.ats-fill{height:100%;background:linear-gradient(90deg,#60a5fa,#2563eb);border-radius:999px}
+.ats-suggest{font-size:.85rem;color:#dbeafe;line-height:1.55;display:flex;gap:8px;align-items:flex-start;margin:7px 0}
+.ats-suggest::before{content:'•';color:#60a5fa}
+
+/* Mode 3: JD matcher */
+.jd-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.jd-score{font-size:2rem;font-weight:760;color:#eaf2ff;line-height:1}
+.jd-pill{padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:700;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#86efac}
+.jd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.jd-chip{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;font-size:.75rem;margin:4px 6px 0 0}
+.jd-chip.good{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);color:#86efac}
+.jd-chip.miss{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+.jd-sub{font-size:.74rem;color:#93c5fd;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+
+.demo-mode{position:absolute;inset:0;opacity:0;pointer-events:none;transform:translateY(10px) scale(.985);transition:opacity .35s ease,transform .35s ease}
+.demo-mode.active{opacity:1;pointer-events:auto;transform:translateY(0) scale(1)}
+
+/* Flow demo */
+.flow-wrap{position:absolute;inset:0;display:grid;place-items:center;padding:26px}
+.flow-card{width:min(920px,96%);padding:28px;border-radius:16px;background:rgba(7,13,28,.7);border:1px solid rgba(96,165,250,.25)}
+.flow-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.flow-step{padding:14px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.2);font-size:.84rem;color:#dbeafe;text-align:center;min-height:72px;display:grid;place-items:center;line-height:1.4}
+.flow-track{position:relative;height:10px;border-radius:999px;background:rgba(148,163,184,.2);overflow:hidden}
+.flow-track::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(34,211,238,.1),rgba(59,130,246,.16),rgba(139,92,246,.12))}
+.flow-dot{position:absolute;top:50%;left:0;width:16px;height:16px;border-radius:50%;background:#60a5fa;box-shadow:0 0 14px rgba(96,165,250,.7);transform:translate(-50%,-50%);animation:flow-move 3.4s ease-in-out infinite}
+@keyframes flow-move{0%{left:4%}50%{left:96%}100%{left:4%}}
+
+/* Chart demo */
+.chart-wrap{position:absolute;inset:0;display:grid;place-items:center;padding:26px}
+.chart-card{width:min(900px,96%);padding:24px;border-radius:16px;background:rgba(7,13,28,.7);border:1px solid rgba(96,165,250,.25)}
+.chart-bars{height:250px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;align-items:end}
+.chart-col{display:flex;flex-direction:column;align-items:center;gap:8px}
+.chart-bar{width:100%;max-width:82px;height:14%;border-radius:12px 12px 6px 6px;background:linear-gradient(180deg,#60a5fa,#2563eb);box-shadow:0 6px 18px rgba(37,99,235,.35);transition:height .7s cubic-bezier(.16,1,.3,1)}
+.chart-label{font-size:.74rem;color:#bfdbfe;letter-spacing:.02em}
+.chart-val{font-size:.72rem;color:#93c5fd;font-weight:700}
+
+/* Orbit demo */
+.orbit-wrap{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+.orbit-system{position:relative;width:380px;height:380px;animation:orbit-rotate 16s linear infinite}
+.orbit-ring{position:absolute;inset:36px;border:1px dashed rgba(96,165,250,.35);border-radius:999px}
+.orbit-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:112px;height:112px;border-radius:999px;background:radial-gradient(circle,#eff6ff,#bfdbfe);border:1px solid rgba(96,165,250,.55);display:grid;place-items:center;box-shadow:0 0 0 14px rgba(59,130,246,.08),0 0 30px rgba(96,165,250,.35)}
+.orbit-center span{width:54px;height:54px;border-radius:999px;display:grid;place-items:center;background:#1d4ed8;color:white;font-weight:800}
+.orbit-item{position:absolute;left:50%;top:50%;transform:rotate(var(--a)) translateX(150px) rotate(calc(-1 * var(--a)));width:88px;height:88px;border-radius:999px;background:rgba(255,255,255,.95);border:2px solid #dbeafe;color:#0f172a;display:grid;place-items:center;text-align:center;font-size:.64rem;font-weight:700;line-height:1.25;padding:8px;box-shadow:0 6px 18px rgba(2,6,23,.28)}
+@keyframes orbit-rotate{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+
+@media(max-width:900px){
+  .integration-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .integration-network{min-height:520px}
+  .center-hub{width:112px;height:112px}
+  .center-hub-inner{width:52px;height:52px}
+  .net-node{width:78px;height:78px;font-size:.56rem}
+  .flow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chart-bars{height:220px;gap:10px}
+  .orbit-system{width:300px;height:300px}
+  .orbit-item{width:74px;height:74px;transform:rotate(var(--a)) translateX(118px) rotate(calc(-1 * var(--a)));font-size:.56rem}
+  .experience-shell{grid-template-columns:1fr}
+  .experience-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .exp-kpis{grid-template-columns:1fr}
+  .exp-flow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .exp-step::after{display:none}
+  .intv-layout{grid-template-columns:1fr}
+  .ats-metrics{grid-template-columns:1fr}
+  .jd-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:900px){
+  .maven-timeline::before{left:20px;transform:none}
+  .timeline-item{grid-template-columns:40px 1fr;gap:14px}
+  .timeline-step{grid-row:1/span 2;justify-content:flex-start}
+  .timeline-pill{left:18px;transform:none;top:-18px}
+  .timeline-item .timeline-left,.timeline-item .timeline-right{grid-column:2}
+  .timeline-item .timeline-right{margin-top:.5rem}
+}
+
+/* Light theme */
+body.light-theme{
+  --bg:#f4f7ff;
+  --surface:#ffffff;
+  --surface2:#eef2ff;
+  --border:rgba(15,23,42,0.12);
+  --border2:rgba(15,23,42,0.18);
+  --text:#0f172a;
+  --muted:rgba(15,23,42,0.62);
+  --muted2:rgba(15,23,42,0.52);
+}
+body.light-theme::after{opacity:.012}
+body.light-theme::before{background-image:linear-gradient(rgba(71,103,167,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(71,103,167,.12) 1px,transparent 1px)}
+body.light-theme .float-nav{background:rgba(255,255,255,.85);box-shadow:0 8px 28px rgba(15,23,42,.08)}
+body.light-theme .nav-link{color:rgba(15,23,42,.7)}
+body.light-theme .nav-link:hover{color:#0f172a}
+body.light-theme .btn-ghost{color:#1e293b;background:rgba(255,255,255,.7)}
+body.light-theme .btn-primary{box-shadow:0 0 0 1px rgba(59,130,246,.3),0 4px 16px rgba(59,130,246,.2)}
+body.light-theme .theme-icon-sun{display:block}
+body.light-theme .theme-icon-moon{display:none}
+body.light-theme .timeline-code{background:#f8fbff;color:#1d4ed8;border-color:rgba(59,130,246,.2)}
+body.light-theme [style*="color:#fff"]{color:#0f172a !important}
+body.light-theme [style*="color:rgba(255,255,255"]{color:rgba(15,23,42,.72) !important}
+body.light-theme .h-div{background:rgba(15,23,42,.12)}
+
+/* Slightly thinner typography tuning */
+[style*="font-weight:900"]{font-weight:760 !important}
+[style*="font-weight:800"]{font-weight:700 !important}
+[style*="font-weight:700"]{font-weight:620 !important}
+.btn-primary,.btn-ghost{font-weight:560}
+</style>
 </head>
-<body class="bg-primary-dark text-white">
-    <!-- Particle Background - Global -->
-    <canvas id="particle-canvas"></canvas>
-    
-    <!-- Scroll Progress Indicator -->
-    <div id="scroll-progress" class="fixed top-0 left-0 h-1 bg-accent-cyan z-50 transition-all duration-300" style="width: 0%"></div>
-    
-    <!-- Navigation -->
-    <nav class="fixed w-full top-0 z-50 bg-primary-dark/90 backdrop-blur-sm border-b border-accent-cyan/20">
-        <div class="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <img src="assets/images/logo.svg" alt="HireWise Logo" class="h-8 w-8" onerror="this.style.display='none'">
-                    <span class="text-xl sm:text-2xl font-bold text-accent-cyan">HireWise</span>
-                </div>
-                <div class="hidden md:flex space-x-8">
-                    <a href="#features" class="hover:text-accent-cyan transition">Features</a>
-                    <a href="#how-it-works" class="hover:text-accent-cyan transition">How It Works</a>
-                    <a href="#testimonials" class="hover:text-accent-cyan transition">Success Stories</a>
-                </div>
-                <div class="flex items-center space-x-2 sm:space-x-4">
-                    <a href="auth.html?mode=login" class="px-4 sm:px-6 py-2 border border-accent-cyan text-accent-cyan rounded-lg hover:bg-accent-cyan hover:text-white transition text-sm sm:text-base">Login</a>
-                    <a href="auth.html?mode=signup" class="hidden md:inline-block px-6 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">Sign Up</a>
-                    <!-- Mobile Hamburger -->
-                    <button id="mobile-menu-btn" class="md:hidden text-white focus:outline-none p-2" aria-label="Toggle menu">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-            </div>
-            <!-- Mobile Menu -->
-            <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4 border-t border-accent-cyan/20 pt-4">
-                <div class="flex flex-col space-y-3">
-                    <a href="#features" class="hover:text-accent-cyan transition py-2">Features</a>
-                    <a href="#how-it-works" class="hover:text-accent-cyan transition py-2">How It Works</a>
-                    <a href="#testimonials" class="hover:text-accent-cyan transition py-2">Success Stories</a>
-                    <div class="flex flex-col space-y-2 pt-3 border-t border-accent-cyan/20">
-                        <a href="auth.html?mode=login" class="px-6 py-2 border border-accent-cyan text-accent-cyan rounded-lg hover:bg-accent-cyan hover:text-white transition text-center">Login</a>
-                        <a href="auth.html?mode=signup" class="px-6 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition text-center">Sign Up</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body>
+<div id="scroll-progress"></div>
 
-    <!-- Hero Section -->
-    <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-        <div class="container mx-auto px-4 sm:px-6 z-10 text-center">
-            <h1 class="text-3xl sm:text-5xl md:text-7xl font-bold mb-4 sm:mb-6 animate-fade-in leading-tight">
-                Master Your <span class="text-accent-cyan">Interview Skills</span> with AI
-            </h1>
-            <p class="text-base sm:text-xl md:text-2xl text-gray-300 mb-6 sm:mb-8 max-w-3xl mx-auto">
-                Practice with AI-powered mock interviews, get real-time feedback, and land your dream job with confidence.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-                <a href="auth.html?mode=signup" class="px-6 sm:px-8 py-3 sm:py-4 bg-accent-cyan text-white rounded-lg text-base sm:text-lg font-semibold hover:bg-accent-cyan/90 transition transform hover:scale-105">
-                    Start Free Trial
-                </a>
-                <a href="#features" class="px-6 sm:px-8 py-3 sm:py-4 border-2 border-accent-cyan text-accent-cyan rounded-lg text-base sm:text-lg font-semibold hover:bg-accent-cyan/10 transition">
-                    Learn More
-                </a>
-            </div>
-            <div class="mt-8 sm:mt-12 flex justify-center gap-6 sm:gap-8 text-center">
-                <div>
-                    <div class="text-2xl sm:text-3xl font-bold text-accent-cyan">10K+</div>
-                    <div class="text-xs sm:text-base text-gray-400">Active Users</div>
-                </div>
-                <div>
-                    <div class="text-2xl sm:text-3xl font-bold text-accent-cyan">50K+</div>
-                    <div class="text-xs sm:text-base text-gray-400">Mock Interviews</div>
-                </div>
-                <div>
-                    <div class="text-2xl sm:text-3xl font-bold text-accent-cyan">85%</div>
-                    <div class="text-xs sm:text-base text-gray-400">Success Rate</div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Maven-style flying birds in background -->
+<div class="bg-flight" aria-hidden="true">
+  <span class="bg-bird cyan" style="top:18%;left:-8%;--s:1.05;animation-duration:23s;animation-delay:-2s"></span>
+  <span class="bg-bird orange" style="top:34%;left:-18%;--s:1.15;animation-duration:29s;animation-delay:-12s"></span>
+  <span class="bg-bird pink" style="top:56%;left:-10%;--s:.9;animation-duration:27s;animation-delay:-7s"></span>
+  <span class="bg-bird violet" style="top:72%;left:-22%;--s:1;animation-duration:31s;animation-delay:-19s"></span>
+  <span class="bg-bird cyan" style="top:12%;left:-30%;--s:.75;animation-duration:25s;animation-delay:-15s"></span>
+  <span class="bg-bird orange" style="top:44%;left:-26%;--s:.8;animation-duration:34s;animation-delay:-9s"></span>
+</div>
 
-    <!-- Pain Points Section -->
-    <section class="py-20 border-t-2 border-accent-cyan/30">
-        <div class="container mx-auto px-6">
-            <h2 class="text-2xl sm:text-4xl font-bold text-center mb-8 sm:mb-12">The Interview <span class="text-accent-cyan">Challenge</span></h2>
-            <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                <div class="bg-red-900/20 border border-red-500/30 rounded-lg p-6 backdrop-blur-sm">
-                    <div class="text-red-500 text-5xl mb-4">❌</div>
-                    <h3 class="text-xl font-bold mb-3 text-red-400">Without HireWise</h3>
-                    <ul class="space-y-2 text-gray-300">
-                        <li>• Limited practice opportunities</li>
-                        <li>• No feedback on performance</li>
-                        <li>• Nervous and unprepared</li>
-                        <li>• Resume not ATS-optimized</li>
-                        <li>• Mismatch with job descriptions</li>
-                        <li>• Low confidence levels</li>
-                    </ul>
-                </div>
-                <div class="bg-green-900/20 border border-accent-cyan/30 rounded-lg p-6 backdrop-blur-sm">
-                    <div class="text-accent-cyan text-5xl mb-4">✓</div>
-                    <h3 class="text-xl font-bold mb-3 text-accent-cyan">With HireWise</h3>
-                    <ul class="space-y-2 text-gray-300">
-                        <li>• Unlimited AI mock interviews</li>
-                        <li>• Real-time feedback & analysis</li>
-                        <li>• Confident and well-prepared</li>
-                        <li>• ATS-optimized resume</li>
-                        <li>• Perfect JD-resume matching</li>
-                        <li>• 85% interview success rate</li>
-                    </ul>
-                </div>
-            </div>
+<!-- FLOATING NAV -->
+<div class="fixed top-4 left-0 right-0 z-50 px-4 sm:px-6" id="nav-wrapper">
+  <nav class="float-nav max-w-5xl mx-auto px-5 py-3" id="main-nav">
+    <div class="flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2.5 flex-shrink-0">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center" style="box-shadow:0 0 16px rgba(59,130,246,.45)">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 01-1.591.659H9.061a2.25 2.25 0 01-1.591-.659L5 14.5m14 0V17a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 17v-2.5"/></svg>
         </div>
-    </section>
+        <span class="text-base font-bold text-white tracking-tight" style="font-family:'Geist',sans-serif;">Hire<span style="color:#60a5fa">Wise</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-7">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#benefits" class="nav-link">Benefits</a>
+        <a href="#testimonials" class="nav-link">Stories</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="theme-toggle" aria-label="Toggle theme">
+          <svg class="theme-icon-moon" width="15" height="15" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+          <svg class="theme-icon-sun" width="15" height="15" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0M17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1M5.05 6.464A1 1 0 106.465 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414M4 11a1 1 0 100-2H3a1 1 0 000 2h1"/></svg>
+        </button>
+        <a href="auth.html?mode=login" class="btn-ghost hidden sm:inline-flex">Log In</a>
+        <a href="auth.html?mode=signup" class="btn-primary">Get Started Free</a>
+        <button id="mobile-menu-btn" class="md:hidden p-2 text-white/50 hover:text-white" aria-label="Menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path id="ham-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden mobile-panel px-2 py-3 mt-2">
+      <a href="#features" class="block py-2.5 px-3 text-sm text-white/60 hover:text-white hover:bg-white/[0.04] rounded-lg transition">Features</a>
+      <a href="#how-it-works" class="block py-2.5 px-3 text-sm text-white/60 hover:text-white hover:bg-white/[0.04] rounded-lg transition">How It Works</a>
+      <a href="#benefits" class="block py-2.5 px-3 text-sm text-white/60 hover:text-white hover:bg-white/[0.04] rounded-lg transition">Benefits</a>
+      <a href="#testimonials" class="block py-2.5 px-3 text-sm text-white/60 hover:text-white hover:bg-white/[0.04] rounded-lg transition">Stories</a>
+      <div style="height:1px;background:var(--border);margin:8px 4px"></div>
+      <a href="auth.html?mode=login" class="block py-2.5 px-3 text-sm text-center text-white/60 border border-white/10 rounded-lg hover:bg-white/[0.04] transition mb-1.5">Log In</a>
+      <a href="auth.html?mode=signup" class="block py-2.5 px-3 text-sm text-center font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-500 transition">Get Started Free</a>
+    </div>
+  </nav>
+</div>
 
-    <!-- Features Section -->
-    <section id="features" class="py-20 border-t-2 border-accent-cyan/30">
-        <div class="container mx-auto px-6">
-            <h2 class="text-2xl sm:text-4xl font-bold text-center mb-4">Powerful <span class="text-accent-cyan">Features</span></h2>
-            <p class="text-center text-gray-400 mb-12">Everything you need to ace your next interview</p>
-            
-            <div class="grid md:grid-cols-3 gap-8 mb-12">
-                <div class="feature-card border border-accent-cyan/20 rounded-lg p-8 hover:border-accent-cyan/50 transition cursor-pointer backdrop-blur-md">
-                    <div class="text-5xl mb-4">🎤</div>
-                    <h3 class="text-2xl font-bold mb-3">AI Mock Interviews</h3>
-                    <p class="text-gray-400">Practice with AI interviewer. Get real-time feedback on answers, tone, and body language.</p>
-                </div>
-                <div class="feature-card border border-accent-cyan/20 rounded-lg p-8 hover:border-accent-cyan/50 transition cursor-pointer backdrop-blur-md">
-                    <div class="text-5xl mb-4">🎯</div>
-                    <h3 class="text-2xl font-bold mb-3">JD Matcher</h3>
-                    <p class="text-gray-400">Compare your resume with job descriptions. Get compatibility scores and improvement tips.</p>
-                </div>
-                <div class="feature-card border border-accent-cyan/20 rounded-lg p-8 hover:border-accent-cyan/50 transition cursor-pointer backdrop-blur-md">
-                    <div class="text-5xl mb-4">✅</div>
-                    <h3 class="text-2xl font-bold mb-3">ATS Checker</h3>
-                    <p class="text-gray-400">Ensure your resume passes ATS systems with optimization suggestions.</p>
-                </div>
-                <div class="feature-card border border-accent-cyan/20 rounded-lg p-8 hover:border-accent-cyan/50 transition cursor-pointer backdrop-blur-md">
-                    <div class="text-5xl mb-4">📊</div>
-                    <h3 class="text-2xl font-bold mb-3">Performance Analytics</h3>
-                    <p class="text-gray-400">Track your progress with detailed analytics, streaks, and improvement metrics.</p>
-                </div>
-                <div class="feature-card border border-accent-cyan/20 rounded-lg p-8 hover:border-accent-cyan/50 transition cursor-pointer backdrop-blur-md">
-                    <div class="text-5xl mb-4">💼</div>
-                    <h3 class="text-2xl font-bold mb-3">Job Discovery</h3>
-                    <p class="text-gray-400">Find relevant jobs with match scores based on your profile and skills.</p>
-                </div>
-                <div class="feature-card border border-accent-cyan/20 rounded-lg p-8 hover:border-accent-cyan/50 transition cursor-pointer backdrop-blur-md">
-                    <div class="text-5xl mb-4">📅</div>
-                    <h3 class="text-2xl font-bold mb-3">Smart Calendar</h3>
-                    <p class="text-gray-400">Schedule and track interviews. Maintain practice streaks for better results.</p>
-                </div>
+<!-- HERO -->
+<section class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+  <div class="hero-cone"></div>
+  <div class="hero-ambient-1"></div>
+  <div class="hero-ambient-2"></div>
+  <div class="hero-ambient-3"></div>
+  <div class="absolute inset-0 pointer-events-none" style="background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 100%);mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,black 30%,transparent 100%)"></div>
+  <div class="relative z-10 max-w-5xl mx-auto px-5 sm:px-8 text-center pt-32 pb-16">
+    <div class="hero-badge mb-8 mx-auto w-fit fu">
+      <span class="badge-dot"></span>
+      AI-Powered — Google Gemini + Groq + Vapi
+    </div>
+    <h1 class="fu d1 mb-6 tracking-tight" style="font-family:'Geist',sans-serif;font-size:clamp(2.8rem,7vw,5rem);line-height:1.04;font-weight:680;letter-spacing:-.04em">
+      <span style="color:#fff">Land Your Dream Job.</span><br>
+      <span class="grad-text">Practice Smarter</span><span style="color:rgba(255,255,255,.22)"> with AI.</span>
+    </h1>
+    <p class="fu d2 text-lg sm:text-xl leading-relaxed mb-10 max-w-2xl mx-auto" style="color:rgba(226,232,240,0.50)">
+      HireWise combines voice AI interviews, ATS scoring, JD matching, and real-time analytics — everything you need to ace hiring in 2026.
+    </p>
+    <div class="fu d3 flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+      <a href="auth.html?mode=signup" class="btn-primary px-7 py-3.5 text-base" style="border-radius:12px;font-size:.95rem">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Start Free — No credit card
+      </a>
+      <a href="#features" class="btn-ghost py-3.5 px-7" style="border-radius:12px;font-size:.95rem">
+        See How It Works
+        <svg class="w-4 h-4 ml-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <!-- PRODUCT PREVIEW -->
+    <div class="fu d4 product-preview mx-auto" style="max-width:780px">
+      <div class="preview-topbar">
+        <div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>
+        <span style="font-size:.72rem;color:rgba(255,255,255,.22);margin-left:8px;font-family:'Geist',sans-serif">hirewise.app — Voice Interview in Progress</span>
+      </div>
+      <div class="p-6 sm:p-8">
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="sm:col-span-2 rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m10.72 10.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              </div>
+              <span style="font-size:.8rem;font-weight:600;color:rgba(255,255,255,.7);font-family:'Geist',sans-serif">AI Interviewer</span>
+              <span class="kw-tag" style="margin-left:auto">&#9679; Live</span>
             </div>
-        </div>
-    </section>
-
-    <!-- How It Works Section -->
-    <section id="how-it-works" class="py-20 border-t-2 border-accent-cyan/30">
-        <div class="container mx-auto px-6">
-            <h2 class="text-2xl sm:text-4xl font-bold text-center mb-8 sm:mb-12">How It <span class="text-accent-cyan">Works</span></h2>
-            <div class="max-w-4xl mx-auto">
-                <div class="flex flex-col md:flex-row items-center mb-12">
-                    <div class="md:w-1/3 mb-6 md:mb-0">
-                        <div class="w-24 h-24 bg-accent-cyan/20 rounded-full flex items-center justify-center text-4xl font-bold text-accent-cyan mx-auto">1</div>
-                    </div>
-                    <div class="md:w-2/3">
-                        <h3 class="text-2xl font-bold mb-3">Sign Up & Create Profile</h3>
-                        <p class="text-gray-400">Create your account, upload your resume, and set your career goals.</p>
-                    </div>
-                </div>
-                <div class="flex flex-col md:flex-row-reverse items-center mb-12">
-                    <div class="md:w-1/3 mb-6 md:mb-0">
-                        <div class="w-24 h-24 bg-accent-cyan/20 rounded-full flex items-center justify-center text-4xl font-bold text-accent-cyan mx-auto">2</div>
-                    </div>
-                    <div class="md:w-2/3">
-                        <h3 class="text-2xl font-bold mb-3">Take Mock Interviews</h3>
-                        <p class="text-gray-400">Practice with AI interviewer tailored to your target role and industry.</p>
-                    </div>
-                </div>
-                <div class="flex flex-col md:flex-row items-center mb-12">
-                    <div class="md:w-1/3 mb-6 md:mb-0">
-                        <div class="w-24 h-24 bg-accent-cyan/20 rounded-full flex items-center justify-center text-4xl font-bold text-accent-cyan mx-auto">3</div>
-                    </div>
-                    <div class="md:w-2/3">
-                        <h3 class="text-2xl font-bold mb-3">Get Detailed Feedback</h3>
-                        <p class="text-gray-400">Receive AI-powered analysis on your answers, tone, body language, and more.</p>
-                    </div>
-                </div>
-                <div class="flex flex-col md:flex-row-reverse items-center">
-                    <div class="md:w-1/3 mb-6 md:mb-0">
-                        <div class="w-24 h-24 bg-accent-cyan/20 rounded-full flex items-center justify-center text-4xl font-bold text-accent-cyan mx-auto">4</div>
-                    </div>
-                    <div class="md:w-2/3">
-                        <h3 class="text-2xl font-bold mb-3">Improve & Succeed</h3>
-                        <p class="text-gray-400">Track your progress, optimize your resume, and land your dream job!</p>
-                    </div>
-                </div>
+            <p style="font-size:.88rem;color:rgba(255,255,255,.62);line-height:1.65;margin-bottom:1rem">"Tell me about a situation where you had to lead a team through a challenging technical decision. How did you approach the trade-offs and communicate your reasoning?"</p>
+            <div class="flex items-center gap-3">
+              <div class="waveform"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:.72rem;color:rgba(255,255,255,.3)">Listening…</span>
             </div>
-        </div>
-    </section>
-
-    <!-- Testimonials Section -->
-    <section id="testimonials" class="py-20 border-t-2 border-accent-cyan/30">
-        <div class="container mx-auto px-6">
-            <h2 class="text-2xl sm:text-4xl font-bold text-center mb-8 sm:mb-12">Success <span class="text-accent-cyan">Stories</span></h2>
-            <div id="testimonials-container" class="grid md:grid-cols-3 gap-8">
-                <!-- Testimonials will be loaded dynamically -->
-                <div class="border border-accent-cyan/20 rounded-lg p-6 backdrop-blur-md bg-primary-dark-secondary/30">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 bg-accent-cyan/20 rounded-full flex items-center justify-center text-xl font-bold">?</div>
-                        <div class="ml-4">
-                            <div class="font-bold">Your Story Here</div>
-                            <div class="text-sm text-gray-400">Be our first success story!</div>
-                        </div>
-                    </div>
-                    <p class="text-gray-300 italic">"Complete an interview and share your experience to appear here!"</p>
-                    <div class="mt-4 text-accent-cyan">⭐⭐⭐⭐⭐</div>
-                </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+              <div style="font-size:.68rem;color:rgba(255,255,255,.35);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.08em">ATS Score</div>
+              <div class="score-ring mx-auto"><span class="score-inner">82</span></div>
             </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="py-20 border-t-2 border-accent-cyan/30">
-        <div class="container mx-auto px-6 text-center">
-            <h2 class="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6">Ready to Ace Your Next Interview?</h2>
-            <p class="text-base sm:text-xl text-gray-300 mb-6 sm:mb-8">Join thousands of successful candidates using HireWise</p>
-            <a href="auth.html?mode=signup" class="inline-block px-8 py-4 bg-accent-cyan text-white rounded-lg text-lg font-semibold hover:bg-accent-cyan/90 transition transform hover:scale-105">
-                Get Started Free
-            </a>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-12 border-t-2 border-accent-cyan/30">
-        <div class="container mx-auto px-6">
-            <div class="grid md:grid-cols-2 gap-8 mb-8">
-                <div>
-                    <div class="flex items-center space-x-2 mb-4">
-                        <span class="text-2xl font-bold text-accent-cyan">HireWise</span>
-                    </div>
-                    <p class="text-gray-400">AI-powered interview practice platform helping candidates land their dream jobs.</p>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-4 text-accent-cyan">Contact</h4>
-                    <ul class="space-y-3 text-gray-400">
-                        <li class="flex items-center gap-2">
-                            <span class="text-accent-cyan">📧</span>
-                            <a href="mailto:pushkargupta993@gmail.com" class="hover:text-accent-cyan transition">pushkargupta993@gmail.com</a>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <span class="text-accent-cyan">📱</span>
-                            <a href="tel:+918960179834" class="hover:text-accent-cyan transition">+91 8960179834</a>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <span class="text-accent-cyan">📍</span>
-                            <span>Delhi, India</span>
-                        </li>
-                    </ul>
-                </div>
+            <div class="rounded-xl p-4 flex-1" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+              <div style="font-size:.68rem;color:rgba(255,255,255,.35);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.08em">JD Match</div>
+              <div style="font-size:1.6rem;font-weight:900;color:#fff;font-family:'Geist',sans-serif;margin-bottom:4px">78%</div>
+              <div class="prog-bar"><div class="prog-fill" style="width:78%"></div></div>
+              <div class="mt-3 flex flex-wrap gap-1.5">
+                <span class="kw-tag green">React</span>
+                <span class="kw-tag">Python</span>
+                <span class="kw-tag violet">FastAPI</span>
+              </div>
             </div>
-            <div class="border-t border-accent-cyan/20 pt-8 text-center text-gray-400">
-                <p>&copy; 2025 HireWise. All rights reserved.</p>
-            </div>
+          </div>
         </div>
-    </footer>
+      </div>
+    </div>
+    <!-- STATS -->
+    <div class="fu d5 flex flex-wrap justify-center gap-10 sm:gap-20 mt-14">
+      <div class="text-center">
+        <div id="metric-users" style="font-size:2.5rem;font-weight:900;color:#fff;font-family:'Geist',sans-serif;letter-spacing:-.04em">--</div>
+        <div style="font-size:.78rem;color:var(--muted2);margin-top:4px">Registered Users</div>
+      </div>
+      <div class="text-center" style="border-left:1px solid var(--border);border-right:1px solid var(--border);padding:0 3rem">
+        <div id="metric-interviews" style="font-size:2.5rem;font-weight:900;color:#fff;font-family:'Geist',sans-serif;letter-spacing:-.04em">--</div>
+        <div style="font-size:.78rem;color:var(--muted2);margin-top:4px">Interview Sessions</div>
+      </div>
+      <div class="text-center">
+        <div id="metric-success" class="grad-text" style="font-size:2.5rem;font-weight:900;font-family:'Geist',sans-serif;letter-spacing:-.04em">--</div>
+        <div style="font-size:.78rem;color:var(--muted2);margin-top:4px">Completion Rate</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-    <script src="js/particles.js"></script>
-    <script src="js/main.js"></script>
-    <script>
-        // Mobile menu toggle
-        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const hamburgerIcon = document.getElementById('hamburger-icon');
-        
-        if (mobileMenuBtn && mobileMenu) {
-            mobileMenuBtn.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-                // Toggle icon between hamburger and X
-                if (mobileMenu.classList.contains('hidden')) {
-                    hamburgerIcon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
-                } else {
-                    hamburgerIcon.setAttribute('d', 'M6 18L18 6M6 6l12 12');
-                }
-            });
-            
-            // Close menu when clicking nav links
-            mobileMenu.querySelectorAll('a[href^="#"]').forEach(link => {
-                link.addEventListener('click', () => {
-                    mobileMenu.classList.add('hidden');
-                    hamburgerIcon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
-                });
-            });
-        }
-    </script>
+<!-- LOGO STRIP -->
+<div class="h-div"></div>
+<section class="py-10 relative z-10">
+  <div class="max-w-5xl mx-auto px-5 sm:px-8">
+    <p style="font-size:.7rem;text-align:center;color:var(--muted2);font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:1.5rem">Trusted by users from</p>
+    <div class="logo-strip justify-center flex-wrap gap-y-3">
+      <span>Google</span><span>Microsoft</span><span>Amazon</span><span>Infosys</span><span>TCS</span><span>Wipro</span><span>Flipkart</span><span>Razorpay</span>
+    </div>
+  </div>
+</section>
+
+<!-- BENTO FEATURES -->
+<div class="h-div"></div>
+<section id="features" class="py-24 sm:py-28 relative z-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+    <div class="text-center mb-14 reveal">
+      <p class="eyebrow mb-3">Core Features</p>
+      <h2 style="font-family:'Geist',sans-serif;font-size:clamp(2rem,4vw,2.75rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem">Four tools. <span class="grad-text-warm">One platform.</span></h2>
+      <p style="color:var(--muted);max-width:480px;margin:0 auto;font-size:.975rem">Everything you need to go from unprepared to offer letter.</p>
+    </div>
+    <!-- ROW 1 -->
+    <div class="bento-grid mb-4 reveal">
+      <!-- Voice Interview BIG (col 7) -->
+      <div class="bento-card col-span-7 p-7 sm:p-8" style="min-height:320px">
+        <div class="grid-lines"></div>
+        <div style="position:absolute;top:-60px;left:-40px;width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,0.1) 0%,transparent 65%);pointer-events:none"></div>
+        <div class="relative z-10">
+          <div class="icon-pill bg-blue-600/15 mb-5">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+          </div>
+          <h3 style="font-family:'Geist',sans-serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:.5rem">AI Voice Interviews</h3>
+          <p style="color:var(--muted);font-size:.9rem;line-height:1.7;max-width:340px;margin-bottom:1.5rem">Powered by <strong style="color:#93c5fd">Vapi + Groq Llama 3.3</strong>, practice with a real-time AI interviewer that responds like a human. Camera, mic, live feedback.</p>
+          <div class="flex gap-2 flex-wrap">
+            <span class="kw-tag">Vapi Voice AI</span>
+            <span class="kw-tag">Real-time</span>
+            <span class="kw-tag violet">Groq LLM</span>
+          </div>
+        </div>
+        <div class="absolute bottom-7 right-7 rounded-xl p-4" style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.14)">
+          <div class="waveform" style="height:24px"><span></span><span></span><span></span><span></span><span></span></div>
+          <div style="font-size:.68rem;color:var(--muted2);margin-top:5px;text-align:center">Recording…</div>
+        </div>
+      </div>
+      <!-- ATS Checker (col 5) -->
+      <div class="bento-card col-span-5 p-7" style="min-height:320px">
+        <div style="position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(99,102,241,0.1) 0%,transparent 65%);pointer-events:none"></div>
+        <div class="relative z-10">
+          <div class="icon-pill bg-indigo-600/15 mb-5">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          </div>
+          <h3 style="font-family:'Geist',sans-serif;font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:.5rem">ATS Resume Checker</h3>
+          <p style="color:var(--muted);font-size:.875rem;line-height:1.65;margin-bottom:1.5rem">Powered by <strong style="color:#a5b4fc">Google Gemini</strong>. Upload your PDF — get formatting, keywords, structure and readability scores instantly.</p>
+          <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1rem">
+            <div class="flex items-center justify-between mb-3">
+              <span style="font-size:.75rem;color:var(--muted2);font-weight:600">Resume Score</span>
+              <span class="grad-text" style="font-family:'Geist',sans-serif;font-size:1.4rem;font-weight:800">82 / 100</span>
+            </div>
+            <div class="space-y-2">
+              <div><div class="flex justify-between mb-1"><span style="font-size:.68rem;color:var(--muted2)">Keywords</span><span style="font-size:.68rem;color:#86efac">91%</span></div><div class="prog-bar"><div class="prog-fill" style="width:91%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div></div>
+              <div><div class="flex justify-between mb-1"><span style="font-size:.68rem;color:var(--muted2)">Structure</span><span style="font-size:.68rem;color:#93c5fd">78%</span></div><div class="prog-bar"><div class="prog-fill" style="width:78%"></div></div></div>
+              <div><div class="flex justify-between mb-1"><span style="font-size:.68rem;color:var(--muted2)">Formatting</span><span style="font-size:.68rem;color:#c4b5fd">74%</span></div><div class="prog-bar"><div class="prog-fill" style="width:74%;background:linear-gradient(90deg,#8b5cf6,#6366f1)"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ROW 2 -->
+    <div class="bento-grid reveal">
+      <!-- JD Matcher (col 5) -->
+      <div class="bento-card col-span-5 p-7" style="min-height:280px">
+        <div style="position:absolute;bottom:-40px;left:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(139,92,246,0.1) 0%,transparent 65%);pointer-events:none"></div>
+        <div class="relative z-10">
+          <div class="icon-pill bg-violet-600/15 mb-5">
+            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+          <h3 style="font-family:'Geist',sans-serif;font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:.5rem">Job Description Matcher</h3>
+          <p style="color:var(--muted);font-size:.875rem;line-height:1.65;margin-bottom:1.25rem">TF-IDF + cosine similarity + Gemini AI. Know exactly how well you match before applying.</p>
+          <div class="flex items-center gap-4">
+            <div style="text-align:center">
+              <div class="grad-text-warm" style="font-family:'Geist',sans-serif;font-size:2rem;font-weight:900;letter-spacing:-.03em">78%</div>
+              <div style="font-size:.7rem;color:var(--muted2);margin-top:2px">Overall Match</div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <span class="kw-tag green">&#10003; React</span>
+              <span class="kw-tag green">&#10003; Python</span>
+              <span class="kw-tag" style="background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.2);color:#fca5a5">&#10007; Docker</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Analytics Dashboard BIG (col 7) -->
+      <div class="bento-card col-span-7 p-7 sm:p-8" style="min-height:280px">
+        <div class="grid-lines"></div>
+        <div style="position:absolute;top:-60px;right:-40px;width:280px;height:280px;background:radial-gradient(circle,rgba(34,211,238,0.08) 0%,transparent 65%);pointer-events:none"></div>
+        <div class="relative z-10">
+          <div class="icon-pill bg-cyan-600/15 mb-5">
+            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          </div>
+          <h3 style="font-family:'Geist',sans-serif;font-size:1.2rem;font-weight:700;color:#fff;margin-bottom:.5rem">Analytics Dashboard</h3>
+          <p style="color:var(--muted);font-size:.875rem;line-height:1.65;margin-bottom:1.5rem;max-width:320px">Track streaks, XP points, score trends, and performance over time. Gamified progress built in.</p>
+          <div class="grid grid-cols-3 gap-3">
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:.75rem;text-align:center">
+              <div style="font-family:'Geist',sans-serif;font-size:1.35rem;font-weight:800;color:#fff">12</div>
+              <div style="font-size:.65rem;color:var(--muted2);margin-top:2px">Interviews</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:.75rem;text-align:center">
+              <div style="font-family:'Geist',sans-serif;font-size:1.35rem;font-weight:800;color:#fbbf24">&#128293; 7</div>
+              <div style="font-size:.65rem;color:var(--muted2);margin-top:2px">Day Streak</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:.75rem;text-align:center">
+              <div class="grad-text" style="font-family:'Geist',sans-serif;font-size:1.35rem;font-weight:800">1840</div>
+              <div style="font-size:.65rem;color:var(--muted2);margin-top:2px">Total XP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div class="h-div"></div>
+<section id="how-it-works" class="py-24 sm:py-28 relative z-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+    <div class="text-center mb-16 reveal">
+      <p class="eyebrow mb-3">Simple Process</p>
+      <h2 style="font-family:'Geist',sans-serif;font-size:clamp(1.9rem,4vw,2.65rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem">From signup to offer in <span class="grad-text">3 steps</span></h2>
+      <p style="color:var(--muted);max-width:440px;margin:0 auto;font-size:.975rem">No complicated setup. Start practising in under 2 minutes.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="bento-card p-7 text-center reveal">
+        <div class="step-num mx-auto mb-5">1</div>
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.18);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">
+          <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        </div>
+        <h3 style="font-family:'Geist',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:.5rem">Create Your Profile</h3>
+        <p style="color:var(--muted);font-size:.875rem;line-height:1.65">Sign up, upload your resume, set your target role and seniority. Takes under 2 minutes.</p>
+      </div>
+      <div class="bento-card p-7 text-center reveal" style="border-color:rgba(59,130,246,0.2);background:rgba(59,130,246,0.03)">
+        <div class="step-num mx-auto mb-5">2</div>
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">
+          <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+        </div>
+        <h3 style="font-family:'Geist',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:.5rem">Practice &amp; Optimize</h3>
+        <p style="color:var(--muted);font-size:.875rem;line-height:1.65">Run voice interviews, check ATS scores, and match resumes to JDs. Get AI feedback after every session.</p>
+      </div>
+      <div class="bento-card p-7 text-center reveal">
+        <div class="step-num mx-auto mb-5">3</div>
+        <div style="width:48px;height:48px;border-radius:14px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">
+          <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        </div>
+        <h3 style="font-family:'Geist',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:.5rem">Land the Job</h3>
+        <p style="color:var(--muted);font-size:.875rem;line-height:1.65">Walk into every interview prepared. Track your progress, close skill gaps, and interview with real confidence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFITS / COMPARISON -->
+<div class="h-div"></div>
+<section id="benefits" class="py-24 sm:py-28 relative z-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+    <div class="text-center mb-14 reveal">
+      <p class="eyebrow mb-3">Why HireWise</p>
+      <h2 style="font-family:'Geist',sans-serif;font-size:clamp(1.9rem,4vw,2.65rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem">Integrate with every <span class="grad-text-warm">hiring workflow</span></h2>
+      <p style="color:var(--muted);max-width:620px;margin:0 auto;font-size:.975rem">Optexity-style hub layout, adapted to HireWise's theme and interview ecosystem.</p>
+    </div>
+    <div class="experience-shell reveal">
+      <div class="experience-tabs">
+        <button class="exp-tab active" data-exp="interview">
+          <div class="exp-tab-title">AI Interview</div>
+          <div class="exp-tab-sub">voice simulation + live scoring</div>
+        </button>
+        <button class="exp-tab" data-exp="ats">
+          <div class="exp-tab-title">ATS Checker</div>
+          <div class="exp-tab-sub">resume quality + fix suggestions</div>
+        </button>
+        <button class="exp-tab" data-exp="jd">
+          <div class="exp-tab-title">JD Matcher</div>
+          <div class="exp-tab-sub">skill fit + gap analysis</div>
+        </button>
+      </div>
+
+      <div class="experience-preview" id="exp-preview">
+        <div class="exp-head">
+          <h3 class="exp-title" id="exp-title">AI Interview Simulation</h3>
+          <span class="live-pill">Live Simulation</span>
+        </div>
+        <p class="exp-subtitle" id="exp-subtitle">
+          Practice role-specific interviews with AI, get immediate feedback, and improve round by round.
+        </p>
+        <div id="exp-dynamic" class="exp-dynamic"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<div class="h-div"></div>
+<section id="testimonials" class="py-24 sm:py-28 relative z-10">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8">
+    <div class="text-center mb-14 reveal">
+      <p class="eyebrow mb-3">Success Stories</p>
+      <h2 style="font-family:'Geist',sans-serif;font-size:clamp(1.9rem,4vw,2.65rem);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:.75rem">What our users <span class="grad-text">say</span></h2>
+      <p style="color:var(--muted);max-width:520px;margin:0 auto;font-size:.975rem">Live testimonials are loaded from your backend and shown in the same alternating timeline style.</p>
+    </div>
+    <div id="testimonials-timeline" class="maven-timeline reveal">
+      <div class="timeline-item">
+        <div class="timeline-left timeline-card" style="min-height:120px">
+          <h3 style="font-family:'Geist',sans-serif;font-size:1.15rem;font-weight:700">Loading testimonials...</h3>
+          <p style="color:var(--muted);margin-top:.35rem">Fetching latest approved feedback from backend.</p>
+        </div>
+        <div class="timeline-step"><span class="timeline-dot"></span></div>
+        <div class="timeline-right timeline-code">GET /api/feedback/public?limit=6</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<div class="h-div"></div>
+<section class="py-28 sm:py-32 relative overflow-hidden z-10">
+  <div class="cta-glow"></div>
+  <div class="absolute inset-0 pointer-events-none" style="background-image:linear-gradient(rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.022) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(ellipse 60% 70% at 50% 50%,black 20%,transparent 100%);mask-image:radial-gradient(ellipse 60% 70% at 50% 50%,black 20%,transparent 100%)"></div>
+  <div class="relative z-10 max-w-3xl mx-auto px-5 sm:px-8 text-center reveal">
+    <div class="hero-badge mb-6 mx-auto w-fit"><span class="badge-dot"></span> Free to get started — no credit card</div>
+    <h2 style="font-family:'Geist',sans-serif;font-size:clamp(2.2rem,5vw,3.5rem);font-weight:900;color:#fff;letter-spacing:-.04em;line-height:1.06;margin-bottom:1.25rem">Ready to ace your<br><span class="grad-text">next interview?</span></h2>
+    <p style="font-size:1.05rem;color:var(--muted);margin-bottom:2.5rem;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.7">Join thousands of candidates who prepared smarter and landed their dream roles with HireWise.</p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="auth.html?mode=signup" class="btn-primary px-9 py-4" style="border-radius:14px;font-size:1rem">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Get Started Free
+      </a>
+      <a href="auth.html?mode=login" class="btn-ghost px-9 py-4" style="border-radius:14px;font-size:1rem">Log In to Dashboard</a>
+    </div>
+  </div>
+</section>
+
+<script>
+window.addEventListener('scroll',()=>{
+  const sp=document.getElementById('scroll-progress');
+  const pct=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100;
+  sp.style.width=Math.min(pct,100)+'%';
+},{passive:true});
+const mainNav=document.getElementById('main-nav');
+window.addEventListener('scroll',()=>{mainNav.classList.toggle('scrolled',window.scrollY>40)},{passive:true});
+const mBtn=document.getElementById('mobile-menu-btn');
+const mMenu=document.getElementById('mobile-menu');
+const hamIcon=document.getElementById('ham-icon');
+mBtn.addEventListener('click',()=>{
+  const open=mMenu.classList.toggle('hidden');
+  hamIcon.setAttribute('d',open?'M4 6h16M4 12h16M4 18h16':'M6 18L18 6M6 6l12 12');
+});
+mMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{mMenu.classList.add('hidden');hamIcon.setAttribute('d','M4 6h16M4 12h16M4 18h16');}));
+document.addEventListener('click',e=>{if(!mBtn.contains(e.target)&&!mMenu.contains(e.target)){mMenu.classList.add('hidden');hamIcon.setAttribute('d','M4 6h16M4 12h16M4 18h16');}});
+const ro=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');ro.unobserve(e.target);}});},{threshold:0.1});
+document.querySelectorAll('.reveal').forEach(el=>ro.observe(el));
+
+// Realistic benefits cockpit interactions (core HireWise features only)
+const experienceData = {
+  interview: {
+    title: 'AI Interview Simulation',
+    subtitle: 'Practice role-specific interviews with AI, get immediate feedback, and improve round by round.',
+    render: () => `
+      <div class="intv-layout">
+        <div class="panel">
+          <div class="panel-title">Live Questions</div>
+          <div class="q-item">“Walk me through a challenging bug you fixed and your debugging approach.”</div>
+          <div class="q-item">“How would you design a scalable notification service?”</div>
+          <div class="q-item">“What trade-offs did you make in your last project decision?”</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Mic Activity</div>
+          <div class="live-wave"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div style="margin-top:10px;font-size:.82rem;color:#dbeafe;line-height:1.6">Session Score: <strong style="color:#93c5fd">82/100</strong><br>Confidence: <strong style="color:#86efac">Improving</strong></div>
+        </div>
+      </div>
+      <div class="exp-outcome" style="margin-top:12px">
+        <div class="exp-outcome-title">Outcome</div>
+        <div class="exp-outcome-item">You get role-wise interview feedback with precise improvement points.</div>
+      </div>
+    `
+  },
+  ats: {
+    title: 'ATS Resume Analyzer',
+    subtitle: 'Upload resume and instantly see where it fails screening, with concrete fixes for better shortlisting.',
+    render: () => `
+      <div class="ats-metrics">
+        <div class="ats-card"><div class="ats-label">Keywords</div><div class="ats-score">91%</div><div class="ats-bar"><div class="ats-fill" style="width:91%"></div></div></div>
+        <div class="ats-card"><div class="ats-label">Formatting</div><div class="ats-score">74%</div><div class="ats-bar"><div class="ats-fill" style="width:74%"></div></div></div>
+        <div class="ats-card"><div class="ats-label">Structure</div><div class="ats-score">78%</div><div class="ats-bar"><div class="ats-fill" style="width:78%"></div></div></div>
+        <div class="ats-card"><div class="ats-label">Readability</div><div class="ats-score">80%</div><div class="ats-bar"><div class="ats-fill" style="width:80%"></div></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Top Fix Suggestions</div>
+        <div class="ats-suggest">Add missing role-specific keywords in project bullets.</div>
+        <div class="ats-suggest">Use consistent section headings and improve spacing.</div>
+        <div class="ats-suggest">Quantify impact with metrics in experience section.</div>
+      </div>
+    `
+  },
+  jd: {
+    title: 'Job Description Matcher',
+    subtitle: 'Compare your resume against a target JD and identify exactly which skills are missing before applying.',
+    render: () => `
+      <div class="jd-top">
+        <div>
+          <div class="jd-sub">Overall Match</div>
+          <div class="jd-score">78%</div>
+        </div>
+        <span class="jd-pill">Strong Fit</span>
+      </div>
+      <div class="jd-grid">
+        <div class="panel">
+          <div class="panel-title">Matched Skills</div>
+          <span class="jd-chip good">React</span><span class="jd-chip good">Python</span><span class="jd-chip good">FastAPI</span><span class="jd-chip good">REST APIs</span>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Missing Skills</div>
+          <span class="jd-chip miss">Docker</span><span class="jd-chip miss">Kubernetes</span><span class="jd-chip miss">System Design Depth</span>
+        </div>
+      </div>
+      <div class="exp-outcome" style="margin-top:12px">
+        <div class="exp-outcome-title">Outcome</div>
+        <div class="exp-outcome-item">Get a clear gap-based action list before applying to improve callback chances.</div>
+      </div>
+    `
+  }
+};
+
+const expTabs = document.querySelectorAll('.exp-tab');
+const expPreview = document.getElementById('exp-preview');
+const expDynamic = document.getElementById('exp-dynamic');
+
+function renderExperience(domain) {
+  const data = experienceData[domain];
+  if (!data) return;
+
+  document.getElementById('exp-title').textContent = data.title;
+  document.getElementById('exp-subtitle').textContent = data.subtitle;
+  if (expDynamic) expDynamic.innerHTML = data.render();
+
+  expTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.exp === domain));
+  expPreview.classList.remove('exp-enter');
+  void expPreview.offsetWidth;
+  expPreview.classList.add('exp-enter');
+}
+
+expTabs.forEach(btn => btn.addEventListener('click', () => renderExperience(btn.dataset.exp)));
+renderExperience('interview');
+
+// Theme toggle (dark/light)
+const themeToggle = document.getElementById('theme-toggle');
+const storedTheme = localStorage.getItem('hirewise-theme');
+if (storedTheme === 'light') document.body.classList.add('light-theme');
+
+themeToggle.addEventListener('click',()=>{
+  document.body.classList.toggle('light-theme');
+  localStorage.setItem('hirewise-theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
+});
+
+const API_BASE = 'http://localhost:8001/api';
+
+function formatCompact(value, suffix = '') {
+  const num = Number(value || 0);
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M${suffix}`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K${suffix}`;
+  return `${num}${suffix}`;
+}
+
+async function loadLiveMetrics() {
+  try {
+    const res = await fetch(`${API_BASE}/public/metrics`);
+    if (!res.ok) throw new Error('Metrics endpoint unavailable');
+    const payload = await res.json();
+    const data = payload.data || {};
+
+    document.getElementById('metric-users').textContent = formatCompact(data.total_users || 0, '+');
+    document.getElementById('metric-interviews').textContent = formatCompact(data.total_interviews || 0, '+');
+    document.getElementById('metric-success').textContent = `${data.completion_rate ?? 0}%`;
+  } catch (e) {
+    document.getElementById('metric-users').textContent = 'Live';
+    document.getElementById('metric-interviews').textContent = 'Data';
+    document.getElementById('metric-success').textContent = 'Soon';
+  }
+}
+
+function renderTestimonialsTimeline(items) {
+  const wrap = document.getElementById('testimonials-timeline');
+  if (!wrap) return;
+
+  if (!items.length) {
+    wrap.innerHTML = `
+      <div class="timeline-item">
+        <div class="timeline-left timeline-card" style="min-height:120px">
+          <h3 style="font-family:'Geist',sans-serif;font-size:1.15rem;font-weight:700">No testimonials yet</h3>
+          <p style="color:var(--muted);margin-top:.35rem">Complete an interview and submit feedback to appear here.</p>
+        </div>
+        <div class="timeline-step"><span class="timeline-dot"></span></div>
+        <div class="timeline-right timeline-code">POST /api/feedback/submit</div>
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = items.map((t, i) => {
+    const initials = (t.name || 'U').trim().charAt(0).toUpperCase();
+    const stars = '★'.repeat(Math.max(1, Math.min(5, Number(t.rating || 5))));
+    const leftCard = `
+      <div class="timeline-left timeline-card" style="min-height:140px">
+        <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:.55rem">
+          <div style="width:34px;height:34px;border-radius:999px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:.82rem">${initials}</div>
+          <div>
+            <div style="font-family:'Geist',sans-serif;font-weight:700">${t.name || 'Anonymous'}</div>
+            <div style="font-size:.78rem;color:var(--muted2)">${t.title || 'Candidate'}</div>
+          </div>
+        </div>
+        <p style="color:var(--muted);line-height:1.7;font-style:italic">"${(t.text || '').replace(/"/g, '&quot;')}"</p>
+        <div style="margin-top:.7rem;color:#60a5fa">${stars}</div>
+      </div>`;
+
+    const rightCode = `<div class="timeline-right timeline-code">rating: ${Number(t.rating || 5)}/5\nsource: approved testimonial\nposted: ${(t.date || '').slice(0, 10) || 'recent'}</div>`;
+
+    return `<div class="timeline-item">${i % 2 === 0 ? `${leftCard}<div class=\"timeline-step\"><span class=\"timeline-pill\">User ${i + 1}</span><span class=\"timeline-dot\"></span></div>${rightCode}` : `${rightCode}<div class=\"timeline-step\"><span class=\"timeline-pill\">User ${i + 1}</span><span class=\"timeline-dot\"></span></div>${leftCard.replace('timeline-left','timeline-right')}`}</div>`;
+  }).join('');
+}
+
+async function loadTestimonials() {
+  try {
+    const res = await fetch(`${API_BASE}/feedback/public?limit=6`);
+    if (!res.ok) throw new Error('Testimonials unavailable');
+    const list = await res.json();
+    renderTestimonialsTimeline(Array.isArray(list) ? list : []);
+  } catch (e) {
+    renderTestimonialsTimeline([]);
+  }
+}
+
+loadLiveMetrics();
+loadTestimonials();
+</script>
 </body>
 </html>

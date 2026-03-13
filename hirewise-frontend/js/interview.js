@@ -36,7 +36,7 @@ class InterviewManager {
         modal.id = 'interview-setup-modal';
         modal.className = 'modal-backdrop';
         modal.innerHTML = '<div class="modal max-w-2xl p-0" style="max-height:90vh;overflow-y:auto;">' +
-            '<div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid rgba(0,172,193,.2)">' +
+            '<div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid rgba(15, 118, 110,.2)">' +
                 '<h2 class="text-2xl font-bold text-white">Start Voice Interview</h2>' +
                 '<button class="close-modal text-gray-400 hover:text-white text-2xl leading-none" id="close-setup-modal">&times;</button>' +
             '</div>' +
@@ -68,7 +68,7 @@ class InterviewManager {
                         '<label class="block text-sm font-medium mb-1">Job Description <span class="text-red-400">*</span></label>' +
                         '<textarea id="iv-job-description" rows="4" required placeholder="Paste the job description here..." class="w-full px-4 py-2 bg-primary-dark border border-accent-cyan/20 rounded-lg focus:border-accent-cyan focus:outline-none text-white text-sm"></textarea>' +
                     '</div>' +
-                    '<div class="p-4 rounded-lg border border-accent-cyan/20" style="background:rgba(0,172,193,.05)">' +
+                    '<div class="p-4 rounded-lg border border-accent-cyan/20" style="background:rgba(15, 118, 110,.05)">' +
                         '<h4 class="text-sm font-semibold mb-3 text-accent-cyan">Device Check</h4>' +
                         '<div class="flex items-center gap-6">' +
                             '<div class="flex items-center gap-2">' +
@@ -259,7 +259,7 @@ class InterviewManager {
         modal.id = 'voice-interview-modal';
         modal.className = 'modal-backdrop';
         modal.innerHTML = '<div class="modal max-w-5xl p-0" style="max-height:95vh;display:flex;flex-direction:column">' +
-            '<div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid rgba(0,172,193,.2);flex-shrink:0">' +
+            '<div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid rgba(15, 118, 110,.2);flex-shrink:0">' +
                 '<div class="flex items-center gap-3">' +
                     '<h2 class="text-xl font-bold">Voice Interview</h2>' +
                     '<span class="text-accent-cyan font-mono text-sm" id="vi-timer">00:00</span>' +
@@ -506,7 +506,7 @@ class InterviewManager {
                 qaPairsHtml += '<details class="border border-accent-cyan/10 rounded-lg overflow-hidden">' +
                     '<summary class="px-4 py-3 cursor-pointer hover:bg-accent-cyan/5 flex items-center justify-between">' +
                         '<span class="text-sm">Q' + (i+1) + ': ' + qText + '</span>' +
-                        '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(0,172,193,.15);color:#00acc1">' + qa.score + '/10</span>' +
+                        '<span class="text-xs px-2 py-0.5 rounded" style="background:rgba(31, 58, 95,.15);color:#1F3A5F">' + qa.score + '/10</span>' +
                     '</summary>' +
                     '<div class="px-4 py-3 border-t border-accent-cyan/10 text-sm space-y-2" style="background:rgba(0,0,0,.15)">' +
                         '<p><strong class="text-gray-400">Answer:</strong> ' + (qa.answer || 'N/A') + '</p>' +
@@ -522,7 +522,7 @@ class InterviewManager {
         modal.id = 'interview-report-modal';
         modal.className = 'modal-backdrop';
         modal.innerHTML = '<div class="modal max-w-3xl p-0" style="max-height:90vh;display:flex;flex-direction:column">' +
-            '<div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid rgba(0,172,193,.2);flex-shrink:0">' +
+            '<div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.5rem;border-bottom:1px solid rgba(15, 118, 110,.2);flex-shrink:0">' +
                 '<h2 class="text-xl font-bold">Interview Report</h2>' +
                 '<button class="text-gray-400 hover:text-white text-2xl leading-none" id="close-report-modal">&times;</button>' +
             '</div>' +
@@ -547,7 +547,7 @@ class InterviewManager {
                 '<p class="text-sm text-gray-400 mb-6"><strong class="text-accent-cyan">Recommendation:</strong> ' + (report.recommendation || '') + '</p>' +
                 qaPairsHtml +
             '</div>' +
-            '<div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid rgba(0,172,193,.2);flex-shrink:0;text-align:right">' +
+            '<div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid rgba(15, 118, 110,.2);flex-shrink:0;text-align:right">' +
                 '<button id="done-report-btn" class="px-6 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition font-semibold">Done</button>' +
             '</div>' +
         '</div>';

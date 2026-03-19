@@ -387,6 +387,84 @@ const API = {
         }
     },
 
+    // Jobs Portal
+    async discoverJobs({ query = '', location = '', remoteOnly = false, resumeFile = null, resumeId = '', useResume = false } = {}) {
+        try {
+            const user = Storage.getUser();
+            const formData = new FormData();
+
+            if (user?.userId) {
+                formData.append('user_id', user.userId);
+            }
+            if (query) {
+                formData.append('query', query);
+            }
+            if (location) {
+                formData.append('location', location);
+            }
+            if (remoteOnly) {
+                formData.append('remote_only', 'true');
+            }
+            formData.append('use_resume', useResume ? 'true' : 'false');
+            if (resumeFile) {
+                formData.append('resume_file', resumeFile);
+            }
+            if (resumeId) {
+                formData.append('resume_id', resumeId);
+            }
+
+            const response = await fetch(`${this.baseURL}/jobs/discover`, {
+                method: 'POST',
+                body: formData
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async applyToJob(job) {
+        try {
+            const user = Storage.getUser();
+            if (!user?.userId) {
+                throw new Error('User not found');
+            }
+
+            const response = await fetch(`${this.baseURL}/jobs/apply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: user.userId,
+                    job_title: job.title,
+                    company: job.company,
+                    source: job.source,
+                    job_url: job.url,
+                    location: job.location || null
+                })
+            });
+
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async getAppliedJobs() {
+        try {
+            const user = Storage.getUser();
+            if (!user?.userId) {
+                return { success: true, data: [] };
+            }
+
+            const response = await fetch(`${this.baseURL}/jobs/applications/${user.userId}`);
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
     // Dashboard Stats
     async getDashboardStats() {
         const interviews = Storage.getInterviews();

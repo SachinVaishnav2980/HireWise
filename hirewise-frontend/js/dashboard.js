@@ -908,25 +908,287 @@ async function loadInterviewSessions() {
 }
 
 function loadJobs() {
-    // Mock job listings
-    // This will be replaced with actual API call
     const jobsView = document.getElementById('jobs-view');
-    if (jobsView) {
-        jobsView.innerHTML = `
-            <h1 class="text-3xl font-bold mb-6">Job Discovery</h1>
-            <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-8 text-center">
-                <div class="text-6xl mb-4">💼</div>
-                <h3 class="text-2xl font-bold mb-4">Job Discovery Coming Soon!</h3>
-                <p class="text-gray-400 mb-6">
-                    We're working on an amazing job discovery feature that will help you find 
-                    the perfect opportunities matched to your skills and experience.
-                </p>
-                <div class="inline-block px-6 py-3 bg-accent-cyan/20 text-accent-cyan rounded-lg">
-                    Feature in Development
+    if (!jobsView) return;
+
+    jobsView.innerHTML = `
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#1E1E1E] mb-2">Job Discovery</h1>
+        <p class="text-[#6B7280] mb-6 max-w-2xl">Upload a resume to get role recommendations and discover matching openings, or search jobs directly without uploading.</p>
+
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm mb-6">
+            <form id="jobs-search-form" class="grid gap-4 md:grid-cols-12">
+                <div class="md:col-span-4">
+                    <label class="block text-sm font-semibold text-[#374151] mb-1">Role or Keyword</label>
+                    <input id="jobs-query" type="text" placeholder="e.g. Software Engineer"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F]" />
                 </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-semibold text-[#374151] mb-1">Location</label>
+                    <input id="jobs-location" type="text" placeholder="e.g. Bengaluru"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F]" />
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-semibold text-[#374151] mb-1">Resume (Optional)</label>
+                    <input id="jobs-resume" type="file" accept=".pdf,.docx"
+                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-[#1F3A5F]/10 file:text-[#1F3A5F]" />
+                    <select id="jobs-existing-resume"
+                        class="mt-2 w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F] text-sm">
+                        <option value="">Use latest saved resume</option>
+                    </select>
+                    <p class="mt-1 text-xs text-[#6B7280]">You can upload a new file or choose an existing resume from your database.</p>
+                </div>
+                <div class="md:col-span-2 flex items-end">
+                    <button id="jobs-search-btn" type="submit" class="w-full btn btn-primary">Find Jobs</button>
+                </div>
+                <div class="md:col-span-12 flex items-center justify-between">
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <label class="inline-flex items-center gap-2 text-sm text-[#4B5563]">
+                            <input id="jobs-remote-only" type="checkbox" class="rounded border-slate-300 text-[#1F3A5F] focus:ring-[#1F3A5F]/30">
+                            Remote only
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-[#4B5563]">
+                            <input id="jobs-use-resume" type="checkbox" class="rounded border-slate-300 text-[#1F3A5F] focus:ring-[#1F3A5F]/30">
+                            Use resume analysis
+                        </label>
+                    </div>
+                    <button id="jobs-refresh-applied" type="button" class="text-sm font-semibold text-[#1F3A5F] hover:underline">Refresh Applied Jobs</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="jobs-status" class="hidden mb-4 text-sm"></div>
+
+        <div id="jobs-recommended-roles" class="hidden mb-4 bg-white border border-slate-100 rounded-xl p-4 shadow-sm"></div>
+
+        <div id="jobs-grid" class="grid gap-4 md:grid-cols-2"></div>
+    `;
+
+    initJobsPortalEvents();
+    runJobsSearch();
+}
+
+function initJobsPortalEvents() {
+    const form = document.getElementById('jobs-search-form');
+    const refreshBtn = document.getElementById('jobs-refresh-applied');
+    const resumeInput = document.getElementById('jobs-resume');
+    const existingResumeSelect = document.getElementById('jobs-existing-resume');
+    const useResumeCheckbox = document.getElementById('jobs-use-resume');
+
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await runJobsSearch();
+    });
+
+    refreshBtn?.addEventListener('click', async () => {
+        await runJobsSearch();
+    });
+
+    resumeInput?.addEventListener('change', () => {
+        if (resumeInput.files && resumeInput.files.length > 0 && useResumeCheckbox) {
+            useResumeCheckbox.checked = true;
+            if (existingResumeSelect) {
+                existingResumeSelect.value = '';
+            }
+        }
+    });
+
+    existingResumeSelect?.addEventListener('change', () => {
+        if (existingResumeSelect.value && useResumeCheckbox) {
+            useResumeCheckbox.checked = true;
+            if (resumeInput) {
+                resumeInput.value = '';
+            }
+        }
+    });
+
+    populateExistingResumes();
+}
+
+async function populateExistingResumes() {
+    const select = document.getElementById('jobs-existing-resume');
+    if (!select) return;
+
+    const resumesResult = await API.getUserResumes();
+    if (!resumesResult.success || !Array.isArray(resumesResult.data) || resumesResult.data.length === 0) {
+        return;
+    }
+
+    const options = resumesResult.data.map((resume) => {
+        const label = `${resume.fileName || 'Resume'} (${new Date(resume.uploadedAt).toLocaleDateString()})`;
+        return `<option value="${escapeHtml(resume.resumeId)}">${escapeHtml(label)}</option>`;
+    }).join('');
+
+    select.innerHTML = '<option value="">Use latest saved resume</option>' + options;
+}
+
+function setJobsStatus(message, type = 'info') {
+    const statusEl = document.getElementById('jobs-status');
+    if (!statusEl) return;
+
+    const colorMap = {
+        info: 'text-[#1F3A5F]',
+        success: 'text-green-600',
+        error: 'text-red-600'
+    };
+
+    statusEl.className = `mb-4 text-sm ${colorMap[type] || colorMap.info}`;
+    statusEl.textContent = message;
+    statusEl.classList.remove('hidden');
+}
+
+async function runJobsSearch() {
+    const queryInput = document.getElementById('jobs-query');
+    const locationInput = document.getElementById('jobs-location');
+    const resumeInput = document.getElementById('jobs-resume');
+    const existingResumeSelect = document.getElementById('jobs-existing-resume');
+    const useResumeInput = document.getElementById('jobs-use-resume');
+    const remoteOnlyInput = document.getElementById('jobs-remote-only');
+    const searchBtn = document.getElementById('jobs-search-btn');
+    const jobsGrid = document.getElementById('jobs-grid');
+    const rolesBox = document.getElementById('jobs-recommended-roles');
+
+    if (!jobsGrid || !searchBtn) return;
+
+    searchBtn.disabled = true;
+    jobsGrid.innerHTML = '<div class="md:col-span-2 text-center py-10 text-[#6B7280]">Loading jobs...</div>';
+    rolesBox?.classList.add('hidden');
+
+    setJobsStatus('Searching jobs from multiple sources...', 'info');
+
+    const useResume = !!useResumeInput?.checked;
+    const selectedResumeFile = resumeInput?.files?.[0] || null;
+    const selectedExistingResumeId = existingResumeSelect?.value || '';
+
+    const discoverResult = await API.discoverJobs({
+        query: queryInput?.value?.trim() || '',
+        location: locationInput?.value?.trim() || '',
+        remoteOnly: !!remoteOnlyInput?.checked,
+        resumeFile: useResume ? selectedResumeFile : null,
+        resumeId: useResume ? selectedExistingResumeId : '',
+        useResume
+    });
+
+    if (!discoverResult.success) {
+        jobsGrid.innerHTML = '<div class="md:col-span-2 text-center py-10 text-red-600">Unable to fetch jobs right now. Please try again.</div>';
+        setJobsStatus(discoverResult.message || 'Failed to fetch jobs', 'error');
+        searchBtn.disabled = false;
+        return;
+    }
+
+    const [appliedResult, jobsPayload] = await Promise.all([
+        API.getAppliedJobs(),
+        Promise.resolve(discoverResult.data || {})
+    ]);
+
+    const appliedUrls = new Set((appliedResult.success ? appliedResult.data : []).map(item => item.jobUrl));
+    const jobs = jobsPayload.jobs || [];
+    const recommendedRoles = jobsPayload.recommended_roles || [];
+
+    if (recommendedRoles.length > 0) {
+        rolesBox.innerHTML = `
+            <p class="text-sm font-semibold text-[#374151] mb-2">Recommended roles from your resume</p>
+            <div class="flex flex-wrap gap-2">
+                ${recommendedRoles.map(role => `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-[#1F3A5F]/10 text-[#1F3A5F]">${escapeHtml(role)}</span>`).join('')}
             </div>
         `;
+        rolesBox.classList.remove('hidden');
     }
+
+    if (jobs.length === 0) {
+        jobsGrid.innerHTML = '<div class="md:col-span-2 text-center py-10 text-[#6B7280]">No jobs found. Try another role or location.</div>';
+        setJobsStatus('No jobs matched your filters.', 'info');
+        searchBtn.disabled = false;
+        return;
+    }
+
+    jobsGrid.innerHTML = jobs.map(job => renderJobCard(job, appliedUrls.has(job.url))).join('');
+    bindApplyButtons(appliedUrls);
+
+    const usedResume = !!jobsPayload.used_resume;
+    const message = usedResume
+        ? `Found ${jobs.length} jobs using your resume insights.`
+        : `Found ${jobs.length} jobs using role search.`;
+    setJobsStatus(message, 'success');
+    searchBtn.disabled = false;
+}
+
+function renderJobCard(job, isApplied) {
+    const safeTitle = escapeHtml(job.title || 'Unknown Role');
+    const safeCompany = escapeHtml(job.company || 'Unknown Company');
+    const safeLocation = escapeHtml(job.location || 'Not specified');
+    const safeSource = escapeHtml(job.source || 'Unknown');
+    const safeType = escapeHtml(job.employment_type || 'Not specified');
+    const description = escapeHtml((job.description || 'No description available').replace(/\s+/g, ' ').trim().slice(0, 230));
+    const buttonLabel = isApplied ? 'Applied' : 'Apply';
+
+    return `
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <h3 class="text-lg font-bold text-[#1E1E1E] leading-tight">${safeTitle}</h3>
+                ${job.is_remote ? '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">Remote</span>' : ''}
+            </div>
+            <p class="text-sm text-[#374151] font-semibold mb-1">${safeCompany}</p>
+            <p class="text-sm text-[#6B7280] mb-3">${safeLocation}</p>
+            <p class="text-sm text-[#4B5563] mb-4">${description}${description.length >= 230 ? '...' : ''}</p>
+            <div class="flex items-center justify-between gap-3">
+                <div class="text-xs text-[#6B7280]">
+                    <span class="mr-3">${safeSource}</span>
+                    <span>${safeType}</span>
+                </div>
+                <button
+                    class="apply-job-btn px-4 py-2 rounded-lg text-sm font-semibold ${isApplied ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-[#1F3A5F] text-white hover:bg-[#16304d]'}"
+                    data-job='${encodeURIComponent(JSON.stringify(job))}'
+                    ${isApplied ? 'disabled' : ''}
+                >${buttonLabel}</button>
+            </div>
+        </div>
+    `;
+}
+
+function bindApplyButtons(appliedUrls) {
+    document.querySelectorAll('.apply-job-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            if (btn.disabled) return;
+
+            let job;
+            try {
+                job = JSON.parse(decodeURIComponent(btn.getAttribute('data-job') || ''));
+            } catch (error) {
+                showNotification('Invalid job payload', 'error');
+                return;
+            }
+
+            if (!job.url) {
+                showNotification('This job has no valid apply link', 'error');
+                return;
+            }
+
+            const applyResult = await API.applyToJob(job);
+            if (!applyResult.success) {
+                showNotification(applyResult.message || 'Could not save application', 'error');
+                return;
+            }
+
+            appliedUrls.add(job.url);
+            btn.disabled = true;
+            btn.className = 'apply-job-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-200 text-slate-500 cursor-not-allowed';
+            btn.textContent = 'Applied';
+
+            window.open(job.url, '_blank', 'noopener,noreferrer');
+            showNotification('Application saved. Opening job link...', 'success');
+        });
+    });
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function showNotification(message, type = 'info') {

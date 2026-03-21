@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     
     # Vapi (for voice interviews)
     vapi_public_key: str = ""
+
+    # Jobs APIs
+    jsearch_api_key: str = ""
+    adzuna_app_id: str = ""
+    adzuna_app_key: str = ""
+    adzuna_country: str = "in"
     
     # CORS
     frontend_url: str = "http://localhost:8000"

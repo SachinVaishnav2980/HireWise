@@ -68,6 +68,7 @@ function showLoginForm() {
     signupTab.classList.remove('active');
     loginForm.classList.remove('hidden');
     signupForm.classList.add('hidden');
+    setAuthVisualState('login');
     
     // Update URL
     history.pushState({}, '', 'auth.html?mode=login');
@@ -83,9 +84,32 @@ function showSignupForm() {
     loginTab.classList.remove('active');
     signupForm.classList.remove('hidden');
     loginForm.classList.add('hidden');
+    setAuthVisualState('signup');
     
     // Update URL
     history.pushState({}, '', 'auth.html?mode=signup');
+}
+
+function setAuthVisualState(mode) {
+    const heading = document.getElementById('auth-heading');
+    const subheading = document.getElementById('auth-subheading');
+    const visualTitle = document.getElementById('auth-visual-title');
+    const visualSubtitle = document.getElementById('auth-visual-subtitle');
+
+    if (mode === 'signup') {
+        if (heading) heading.textContent = 'Create your account';
+        if (subheading) subheading.textContent = 'Start with your details and unlock personalized interview prep.';
+        if (visualTitle) visualTitle.textContent = 'Build your job-winning profile';
+        if (visualSubtitle) visualSubtitle.textContent = 'Set up once, then practice with AI interviews, ATS scoring, and JD match insights.';
+        document.body.setAttribute('data-auth-mode', 'signup');
+        return;
+    }
+
+    if (heading) heading.textContent = 'Welcome back';
+    if (subheading) subheading.textContent = 'Please enter your details to continue your interview prep journey.';
+    if (visualTitle) visualTitle.textContent = 'Continue your prep streak';
+    if (visualSubtitle) visualSubtitle.textContent = 'AI interviews, ATS checks, and JD matching — all in one focused workflow.';
+    document.body.setAttribute('data-auth-mode', 'login');
 }
 
 function setupLoginForm() {
@@ -212,11 +236,25 @@ function setupSignupForm() {
             console.log('Signup response:', response); // Debug log
             
             if (response.success) {
+                // Upload resume to backend if provided
+                const resumeFileInput = document.getElementById('signup-resume');
+                const resumeFileToUpload = resumeFileInput?.files[0];
+                if (resumeFileToUpload) {
+                    try {
+                        showNotification('Uploading resume...', 'info');
+                        await API.checkATS(resumeFileToUpload);
+                        console.log('Resume uploaded successfully during signup');
+                    } catch (uploadError) {
+                        console.error('Resume upload failed during signup:', uploadError);
+                        // Don't block signup - resume can be uploaded later
+                    }
+                }
+                
                 // Show success and redirect
                 showNotification('Account created successfully! Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
-                }, 1000);
+                }, 1500);
             } else {
                 signupError.textContent = response.message;
                 signupError.classList.remove('hidden');

@@ -10,16 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     initDashboard();
     initNavigation();
     initProfileMenu();
+    initSidebarToggle();
     loadUserData();
     loadDashboardStats();
     initCalendar();
     initPerformanceChart();
-    loadModals();
 });
 
 function initDashboard() {
     // Set initial view
     showView('dashboard');
+    updateVisualMetrics({ totalInterviews: 0, avgScore: 0, streak: 0 });
     
     // Display current date
     const currentDateEl = document.getElementById('current-date');
@@ -46,8 +47,34 @@ function initNavigation() {
             // Show corresponding view
             const view = item.getAttribute('data-view');
             showView(view);
+            
+            // Close sidebar on mobile after clicking a nav item
+            if (window.innerWidth < 768) {
+                closeSidebar();
+            }
         });
     });
+}
+
+function initSidebarToggle() {
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay?.classList.toggle('hidden');
+        });
+    }
+}
+
+// Global function for sidebar overlay onclick
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    sidebar?.classList.remove('open');
+    overlay?.classList.add('hidden');
 }
 
 function showView(viewName) {
@@ -115,11 +142,13 @@ function loadViewContent(viewName) {
             }
             break;
         case 'interview':
-            // Interview modal button
-            const interviewBtn = document.getElementById('open-interview-modal');
+            // Single start button
+            const interviewBtn = document.getElementById('start-interview-btn');
             if (interviewBtn) {
-                interviewBtn.onclick = () => InterviewManager.instance.startInterview();
+                interviewBtn.onclick = () => InterviewManager.instance.openSetupModal();
             }
+            // Load past sessions
+            loadInterviewSessions();
             break;
         case 'jobs':
             loadJobs();
@@ -188,17 +217,57 @@ async function loadDashboardStats() {
         
         if (response.success) {
             const stats = response.data;
+            const totalInterviews = Number(stats.totalInterviews) || 0;
+            const avgScore = Number(stats.avgScore) || 0;
+            const streak = Number(stats.streak) || 0;
             
-            // Update stats cards
-            document.getElementById('total-interviews').textContent = stats.totalInterviews;
-            document.getElementById('avg-score').textContent = stats.avgScore;
-            document.getElementById('streak-display').textContent = `${stats.streak} days`;
+            // Update visual metrics values
+            const totalInterviewsEl = document.getElementById('total-interviews');
+            const avgScoreEl = document.getElementById('avg-score');
+            const streakDisplayEl = document.getElementById('streak-display');
+
+            if (totalInterviewsEl) totalInterviewsEl.textContent = totalInterviews;
+            if (avgScoreEl) avgScoreEl.textContent = `${Math.round(avgScore)}%`;
+            if (streakDisplayEl) streakDisplayEl.textContent = `${streak}d`;
+
+            updateVisualMetrics({ totalInterviews, avgScore, streak });
             
             // Update recent activity
             loadRecentActivity(stats.recentInterviews);
         }
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
+    }
+}
+
+function updateVisualMetrics({ totalInterviews = 0, avgScore = 0, streak = 0 }) {
+    const sessionsBars = document.getElementById('sessions-bars');
+    const scoreOrbit = document.getElementById('score-orbit');
+    const streakTrail = document.getElementById('streak-trail');
+
+    const normalize = (value, max) => Math.max(0, Math.min(value / max, 1));
+
+    const sessionsRatio = normalize(totalInterviews, 30);
+    const scoreRatio = normalize(avgScore, 100);
+    const streakRatio = normalize(streak, 21);
+
+    if (sessionsBars) {
+        const heights = [8, 14, 20, 11, 24, 13, 18, 9, 22, 12, 17, 13];
+        const activeCount = Math.round(sessionsRatio * heights.length);
+        sessionsBars.innerHTML = heights
+            .map((height, index) => `<span class="${index < activeCount ? 'active' : ''}" style="height:${height}px"></span>`)
+            .join('');
+    }
+
+    if (scoreOrbit) {
+        scoreOrbit.style.setProperty('--metric-value', String(Math.max(scoreRatio, 0.02)));
+    }
+
+    if (streakTrail) {
+        const activeCount = Math.round(streakRatio * 12);
+        streakTrail.innerHTML = Array.from({ length: 12 }, (_, i) =>
+            `<span class="${i < activeCount ? 'active' : ''}"></span>`
+        ).join('');
     }
 }
 
@@ -276,7 +345,7 @@ function initCalendar() {
         fixedWeekCount: false,
         showNonCurrentDates: false,
         dayMaxEvents: false,
-        eventDisplay: 'list-item',
+        eventDisplay: 'block',
         displayEventTime: false,
         eventDidMount: function(info) {
             // Add class to day cell to show it has activities
@@ -305,13 +374,13 @@ function getActivityColor(activityType, status) {
     
     // Color by type for scheduled activities
     const colors = {
-        'interview': '#00acc1',
-        'ats_check': '#8b5cf6',
+        'interview': '#1F3A5F',
+        'ats_check': '#4F6D7A',
         'jd_match': '#f59e0b',
-        'practice': '#06b6d4'
+        'practice': '#374151'
     };
     
-    return colors[activityType] || '#00acc1';
+    return colors[activityType] || '#1F3A5F';
 }
 
 async function showDayActivities(dateStr) {
@@ -353,32 +422,32 @@ async function showDayActivities(dateStr) {
         let activitiesHTML = '';
         if (activities.length === 0) {
             activitiesHTML = `
-                <div class="no-activities">
-                    <div class="no-activities-icon">📅</div>
-                    <div class="no-activities-text">No activities on this day</div>
+                <div class="day-empty-state">
+                    <div style="font-size:1.05rem;margin-bottom:0.35rem;">📅</div>
+                    <div>No activities planned for this date.</div>
                 </div>
             `;
         } else {
-            activitiesHTML = `<div class="activity-list">`;
+            activitiesHTML = `<div class="day-activities-list">`;
             activities.forEach(activity => {
                 const icon = getActivityIcon(activity.activity_type);
-                const time = new Date(activity.date).toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
-                    minute: '2-digit' 
+                const time = new Date(activity.date).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit'
                 });
-                
+
                 activitiesHTML += `
-                    <div class="activity-item">
-                        <div class="activity-icon">${icon}</div>
-                        <div class="activity-content">
-                            <div class="activity-type">${activity.activity_type.replace('_', ' ')}</div>
-                            <div class="activity-title">${activity.title}</div>
-                            ${activity.description ? `<div class="activity-description">${activity.description}</div>` : ''}
-                            <div class="activity-description" style="margin-top: 0.25rem; font-size: 0.75rem;">
-                                ${time} • ${activity.status}
+                    <div class="day-activity-item">
+                        <div class="day-activity-icon">${icon}</div>
+                        <div>
+                            <div class="day-activity-head">
+                                <div class="day-activity-title">${activity.title}</div>
+                                <span class="day-status-chip ${activity.status || 'scheduled'}">${activity.status || 'scheduled'}</span>
                             </div>
+                            <div class="day-activity-meta">${activity.activity_type.replace('_', ' ')} • ${time}</div>
+                            ${activity.description ? `<div class="day-activity-description">${activity.description}</div>` : ''}
                         </div>
-                        ${activity.score ? `<div class="activity-score">${activity.score}</div>` : ''}
+                        ${activity.score ? `<div class="day-activity-score">${activity.score}</div>` : ''}
                     </div>
                 `;
             });
@@ -464,7 +533,7 @@ function getCalendarEvents() {
     return interviews.map(interview => ({
         title: 'Interview',
         start: interview.date,
-        color: interview.status === 'completed' ? '#10b981' : '#00acc1',
+        color: interview.status === 'completed' ? '#10b981' : '#1F3A5F',
         extendedProps: {
             interviewId: interview.interviewId,
             score: interview.score
@@ -480,20 +549,45 @@ function initPerformanceChart() {
         .filter(i => i.status === 'completed')
         .slice(-10); // Last 10 interviews
     
-    const labels = interviews.map((_, index) => `Interview ${index + 1}`);
+    const labels = interviews.map((interview, index) => {
+        if (interview.date) {
+            return new Date(interview.date).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+        return `Session ${index + 1}`;
+    });
+
     const scores = interviews.map(i => i.score || 0);
-    
+
+    // Keep graph visible even for new users with no completed interviews yet
+    const graphLabels = labels.length > 0 ? labels : ['Start'];
+    const graphScores = scores.length > 0 ? scores : [0];
+
+    const chartCtx = ctx.getContext('2d');
+    const areaGradient = chartCtx.createLinearGradient(0, 0, 0, 260);
+    areaGradient.addColorStop(0, 'rgba(255, 205, 86, 0.34)');
+    areaGradient.addColorStop(0.45, 'rgba(255, 189, 72, 0.12)');
+    areaGradient.addColorStop(1, 'rgba(255, 189, 72, 0)');
+
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
+            labels: graphLabels,
             datasets: [{
-                label: 'Interview Score',
-                data: scores,
-                borderColor: '#00acc1',
-                backgroundColor: 'rgba(0, 172, 193, 0.1)',
-                tension: 0.4,
-                fill: true
+                label: 'User Progress',
+                data: graphScores,
+                borderColor: '#f7c948',
+                borderWidth: 2.5,
+                backgroundColor: areaGradient,
+                tension: 0.38,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 5,
+                pointBorderWidth: 2,
+                pointBackgroundColor: '#ffe29a',
+                pointBorderColor: '#f6bf3b'
             }]
         },
         options: {
@@ -501,8 +595,17 @@ function initPerformanceChart() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    labels: {
-                        color: '#ffffff'
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(11, 20, 48, 0.95)',
+                    borderColor: 'rgba(247, 201, 72, 0.35)',
+                    borderWidth: 1,
+                    titleColor: '#f5f9ff',
+                    bodyColor: '#d7e7ff',
+                    displayColors: false,
+                    callbacks: {
+                        label: (context) => `Score: ${context.parsed.y}`
                     }
                 }
             },
@@ -511,18 +614,25 @@ function initPerformanceChart() {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
-                        color: '#9ca3af'
+                        color: '#87a3d4',
+                        stepSize: 20
                     },
                     grid: {
-                        color: 'rgba(0, 172, 193, 0.1)'
+                        color: 'rgba(244, 188, 63, 0.14)',
+                        drawBorder: false
                     }
                 },
                 x: {
                     ticks: {
-                        color: '#9ca3af'
+                        color: '#87a3d4',
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 7
                     },
                     grid: {
-                        color: 'rgba(0, 172, 193, 0.1)'
+                        color: 'rgba(91, 117, 181, 0.18)',
+                        borderDash: [4, 5],
+                        drawBorder: false
                     }
                 }
             }
@@ -763,26 +873,322 @@ function uploadResume() {
     input.click();
 }
 
-function loadJobs() {
-    // Mock job listings
-    // This will be replaced with actual API call
-    const jobsView = document.getElementById('jobs-view');
-    if (jobsView) {
-        jobsView.innerHTML = `
-            <h1 class="text-3xl font-bold mb-6">Job Discovery</h1>
-            <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-8 text-center">
-                <div class="text-6xl mb-4">💼</div>
-                <h3 class="text-2xl font-bold mb-4">Job Discovery Coming Soon!</h3>
-                <p class="text-gray-400 mb-6">
-                    We're working on an amazing job discovery feature that will help you find 
-                    the perfect opportunities matched to your skills and experience.
-                </p>
-                <div class="inline-block px-6 py-3 bg-accent-cyan/20 text-accent-cyan rounded-lg">
-                    Feature in Development
+async function loadInterviewSessions() {
+    const container = document.getElementById('interview-sessions-list');
+    if (!container) return;
+    
+    try {
+        const result = await API.getInterviews();
+        if (!result.success || !result.data || result.data.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No interview sessions yet. Start your first interview!</p>';
+            return;
+        }
+        
+        container.innerHTML = result.data.slice(0, 10).map(s => {
+            const statusColor = s.status === 'completed' ? 'text-green-400' : 'text-yellow-400';
+            const date = s.created_at ? new Date(s.created_at).toLocaleDateString() : '';
+            return `
+                <div class="flex items-center justify-between p-3 rounded-lg border border-accent-cyan/10 hover:border-accent-cyan/30 transition cursor-pointer" 
+                     onclick="InterviewManager.instance.loadSessionReport('${s.session_id}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm">&#x1F399;</span>
+                        <div>
+                            <p class="text-sm font-medium">${s.candidate_name || 'Candidate'}</p>
+                            <p class="text-xs text-gray-500">${date}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-semibold ${statusColor}">${s.status || 'unknown'}</span>
                 </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Error loading sessions:', err);
+        container.innerHTML = '<p class="text-gray-500 text-sm">Failed to load sessions.</p>';
+    }
+}
+
+function loadJobs() {
+    const jobsView = document.getElementById('jobs-view');
+    if (!jobsView) return;
+
+    jobsView.innerHTML = `
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#1E1E1E] mb-2">Job Discovery</h1>
+        <p class="text-[#6B7280] mb-6 max-w-2xl">Upload a resume to get role recommendations and discover matching openings, or search jobs directly without uploading.</p>
+
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm mb-6">
+            <form id="jobs-search-form" class="grid gap-4 md:grid-cols-12">
+                <div class="md:col-span-4">
+                    <label class="block text-sm font-semibold text-[#374151] mb-1">Role or Keyword</label>
+                    <input id="jobs-query" type="text" placeholder="e.g. Software Engineer"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F]" />
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-semibold text-[#374151] mb-1">Location</label>
+                    <input id="jobs-location" type="text" placeholder="e.g. Bengaluru"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F]" />
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-semibold text-[#374151] mb-1">Resume (Optional)</label>
+                    <input id="jobs-resume" type="file" accept=".pdf,.docx"
+                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-[#1F3A5F]/10 file:text-[#1F3A5F]" />
+                    <select id="jobs-existing-resume"
+                        class="mt-2 w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F] text-sm">
+                        <option value="">Use latest saved resume</option>
+                    </select>
+                    <p class="mt-1 text-xs text-[#6B7280]">You can upload a new file or choose an existing resume from your database.</p>
+                </div>
+                <div class="md:col-span-2 flex items-end">
+                    <button id="jobs-search-btn" type="submit" class="w-full btn btn-primary">Find Jobs</button>
+                </div>
+                <div class="md:col-span-12 flex items-center justify-between">
+                    <div class="flex items-center gap-6 flex-wrap">
+                        <label class="inline-flex items-center gap-2 text-sm text-[#4B5563]">
+                            <input id="jobs-remote-only" type="checkbox" class="rounded border-slate-300 text-[#1F3A5F] focus:ring-[#1F3A5F]/30">
+                            Remote only
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-[#4B5563]">
+                            <input id="jobs-use-resume" type="checkbox" class="rounded border-slate-300 text-[#1F3A5F] focus:ring-[#1F3A5F]/30">
+                            Use resume analysis
+                        </label>
+                    </div>
+                    <button id="jobs-refresh-applied" type="button" class="text-sm font-semibold text-[#1F3A5F] hover:underline">Refresh Applied Jobs</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="jobs-status" class="hidden mb-4 text-sm"></div>
+
+        <div id="jobs-recommended-roles" class="hidden mb-4 bg-white border border-slate-100 rounded-xl p-4 shadow-sm"></div>
+
+        <div id="jobs-grid" class="grid gap-4 md:grid-cols-2"></div>
+    `;
+
+    initJobsPortalEvents();
+    runJobsSearch();
+}
+
+function initJobsPortalEvents() {
+    const form = document.getElementById('jobs-search-form');
+    const refreshBtn = document.getElementById('jobs-refresh-applied');
+    const resumeInput = document.getElementById('jobs-resume');
+    const existingResumeSelect = document.getElementById('jobs-existing-resume');
+    const useResumeCheckbox = document.getElementById('jobs-use-resume');
+
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await runJobsSearch();
+    });
+
+    refreshBtn?.addEventListener('click', async () => {
+        await runJobsSearch();
+    });
+
+    resumeInput?.addEventListener('change', () => {
+        if (resumeInput.files && resumeInput.files.length > 0 && useResumeCheckbox) {
+            useResumeCheckbox.checked = true;
+            if (existingResumeSelect) {
+                existingResumeSelect.value = '';
+            }
+        }
+    });
+
+    existingResumeSelect?.addEventListener('change', () => {
+        if (existingResumeSelect.value && useResumeCheckbox) {
+            useResumeCheckbox.checked = true;
+            if (resumeInput) {
+                resumeInput.value = '';
+            }
+        }
+    });
+
+    populateExistingResumes();
+}
+
+async function populateExistingResumes() {
+    const select = document.getElementById('jobs-existing-resume');
+    if (!select) return;
+
+    const resumesResult = await API.getUserResumes();
+    if (!resumesResult.success || !Array.isArray(resumesResult.data) || resumesResult.data.length === 0) {
+        return;
+    }
+
+    const options = resumesResult.data.map((resume) => {
+        const label = `${resume.fileName || 'Resume'} (${new Date(resume.uploadedAt).toLocaleDateString()})`;
+        return `<option value="${escapeHtml(resume.resumeId)}">${escapeHtml(label)}</option>`;
+    }).join('');
+
+    select.innerHTML = '<option value="">Use latest saved resume</option>' + options;
+}
+
+function setJobsStatus(message, type = 'info') {
+    const statusEl = document.getElementById('jobs-status');
+    if (!statusEl) return;
+
+    const colorMap = {
+        info: 'text-[#1F3A5F]',
+        success: 'text-green-600',
+        error: 'text-red-600'
+    };
+
+    statusEl.className = `mb-4 text-sm ${colorMap[type] || colorMap.info}`;
+    statusEl.textContent = message;
+    statusEl.classList.remove('hidden');
+}
+
+async function runJobsSearch() {
+    const queryInput = document.getElementById('jobs-query');
+    const locationInput = document.getElementById('jobs-location');
+    const resumeInput = document.getElementById('jobs-resume');
+    const existingResumeSelect = document.getElementById('jobs-existing-resume');
+    const useResumeInput = document.getElementById('jobs-use-resume');
+    const remoteOnlyInput = document.getElementById('jobs-remote-only');
+    const searchBtn = document.getElementById('jobs-search-btn');
+    const jobsGrid = document.getElementById('jobs-grid');
+    const rolesBox = document.getElementById('jobs-recommended-roles');
+
+    if (!jobsGrid || !searchBtn) return;
+
+    searchBtn.disabled = true;
+    jobsGrid.innerHTML = '<div class="md:col-span-2 text-center py-10 text-[#6B7280]">Loading jobs...</div>';
+    rolesBox?.classList.add('hidden');
+
+    setJobsStatus('Searching jobs from multiple sources...', 'info');
+
+    const useResume = !!useResumeInput?.checked;
+    const selectedResumeFile = resumeInput?.files?.[0] || null;
+    const selectedExistingResumeId = existingResumeSelect?.value || '';
+
+    const discoverResult = await API.discoverJobs({
+        query: queryInput?.value?.trim() || '',
+        location: locationInput?.value?.trim() || '',
+        remoteOnly: !!remoteOnlyInput?.checked,
+        resumeFile: useResume ? selectedResumeFile : null,
+        resumeId: useResume ? selectedExistingResumeId : '',
+        useResume
+    });
+
+    if (!discoverResult.success) {
+        jobsGrid.innerHTML = '<div class="md:col-span-2 text-center py-10 text-red-600">Unable to fetch jobs right now. Please try again.</div>';
+        setJobsStatus(discoverResult.message || 'Failed to fetch jobs', 'error');
+        searchBtn.disabled = false;
+        return;
+    }
+
+    const [appliedResult, jobsPayload] = await Promise.all([
+        API.getAppliedJobs(),
+        Promise.resolve(discoverResult.data || {})
+    ]);
+
+    const appliedUrls = new Set((appliedResult.success ? appliedResult.data : []).map(item => item.jobUrl));
+    const jobs = jobsPayload.jobs || [];
+    const recommendedRoles = jobsPayload.recommended_roles || [];
+
+    if (recommendedRoles.length > 0) {
+        rolesBox.innerHTML = `
+            <p class="text-sm font-semibold text-[#374151] mb-2">Recommended roles from your resume</p>
+            <div class="flex flex-wrap gap-2">
+                ${recommendedRoles.map(role => `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-[#1F3A5F]/10 text-[#1F3A5F]">${escapeHtml(role)}</span>`).join('')}
             </div>
         `;
+        rolesBox.classList.remove('hidden');
     }
+
+    if (jobs.length === 0) {
+        jobsGrid.innerHTML = '<div class="md:col-span-2 text-center py-10 text-[#6B7280]">No jobs found. Try another role or location.</div>';
+        setJobsStatus('No jobs matched your filters.', 'info');
+        searchBtn.disabled = false;
+        return;
+    }
+
+    jobsGrid.innerHTML = jobs.map(job => renderJobCard(job, appliedUrls.has(job.url))).join('');
+    bindApplyButtons(appliedUrls);
+
+    const usedResume = !!jobsPayload.used_resume;
+    const message = usedResume
+        ? `Found ${jobs.length} jobs using your resume insights.`
+        : `Found ${jobs.length} jobs using role search.`;
+    setJobsStatus(message, 'success');
+    searchBtn.disabled = false;
+}
+
+function renderJobCard(job, isApplied) {
+    const safeTitle = escapeHtml(job.title || 'Unknown Role');
+    const safeCompany = escapeHtml(job.company || 'Unknown Company');
+    const safeLocation = escapeHtml(job.location || 'Not specified');
+    const safeSource = escapeHtml(job.source || 'Unknown');
+    const safeType = escapeHtml(job.employment_type || 'Not specified');
+    const description = escapeHtml((job.description || 'No description available').replace(/\s+/g, ' ').trim().slice(0, 230));
+    const buttonLabel = isApplied ? 'Applied' : 'Apply';
+
+    return `
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <h3 class="text-lg font-bold text-[#1E1E1E] leading-tight">${safeTitle}</h3>
+                ${job.is_remote ? '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">Remote</span>' : ''}
+            </div>
+            <p class="text-sm text-[#374151] font-semibold mb-1">${safeCompany}</p>
+            <p class="text-sm text-[#6B7280] mb-3">${safeLocation}</p>
+            <p class="text-sm text-[#4B5563] mb-4">${description}${description.length >= 230 ? '...' : ''}</p>
+            <div class="flex items-center justify-between gap-3">
+                <div class="text-xs text-[#6B7280]">
+                    <span class="mr-3">${safeSource}</span>
+                    <span>${safeType}</span>
+                </div>
+                <button
+                    class="apply-job-btn px-4 py-2 rounded-lg text-sm font-semibold ${isApplied ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-[#1F3A5F] text-white hover:bg-[#16304d]'}"
+                    data-job='${encodeURIComponent(JSON.stringify(job))}'
+                    ${isApplied ? 'disabled' : ''}
+                >${buttonLabel}</button>
+            </div>
+        </div>
+    `;
+}
+
+function bindApplyButtons(appliedUrls) {
+    document.querySelectorAll('.apply-job-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            if (btn.disabled) return;
+
+            let job;
+            try {
+                job = JSON.parse(decodeURIComponent(btn.getAttribute('data-job') || ''));
+            } catch (error) {
+                showNotification('Invalid job payload', 'error');
+                return;
+            }
+
+            if (!job.url) {
+                showNotification('This job has no valid apply link', 'error');
+                return;
+            }
+
+            const applyResult = await API.applyToJob(job);
+            if (!applyResult.success) {
+                showNotification(applyResult.message || 'Could not save application', 'error');
+                return;
+            }
+
+            appliedUrls.add(job.url);
+            btn.disabled = true;
+            btn.className = 'apply-job-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-200 text-slate-500 cursor-not-allowed';
+            btn.textContent = 'Applied';
+
+            window.open(job.url, '_blank', 'noopener,noreferrer');
+            showNotification('Application saved. Opening job link...', 'success');
+        });
+    });
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function showNotification(message, type = 'info') {

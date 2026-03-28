@@ -477,7 +477,7 @@ class JDMatcher {
         // Check if we have matchId from backend
         if (this.currentMatch.matchId) {
             // Download DOCX report from backend
-            const downloadUrl = `http://localhost:8001/api/jd-matcher/download/${this.currentMatch.matchId}`;
+            const downloadUrl = `${API.baseURL}/jd-matcher/download/${this.currentMatch.matchId}`;
             
             fetch(downloadUrl)
                 .then(response => {

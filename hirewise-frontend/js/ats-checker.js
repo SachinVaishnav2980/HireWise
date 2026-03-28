@@ -350,8 +350,8 @@ class ATSChecker {
                             <span class="font-semibold">Formatting</span>
                             <span class="text-accent-cyan font-bold">${result.metrics.formatting}%</span>
                         </div>
-                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                            <div class="progress-fill" style="width: ${result.metrics.formatting}%; height: 100%; background: linear-gradient(90deg, #00acc1, #00d4ff); transition: width 0.5s ease;"></div>
+                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(226,232,240,0.5); border-radius: 4px; overflow: hidden;">
+                            <div class="progress-fill" style="width: ${result.metrics.formatting}%; height: 100%; background: #1F3A5F; transition: width 0.5s ease;"></div>
                         </div>
                     </div>
                 </div>
@@ -362,8 +362,8 @@ class ATSChecker {
                             <span class="font-semibold">Keywords</span>
                             <span class="text-accent-cyan font-bold">${result.metrics.keywords}%</span>
                         </div>
-                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                            <div class="progress-fill" style="width: ${result.metrics.keywords}%; height: 100%; background: linear-gradient(90deg, #00acc1, #00d4ff); transition: width 0.5s ease;"></div>
+                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(226,232,240,0.5); border-radius: 4px; overflow: hidden;">
+                            <div class="progress-fill" style="width: ${result.metrics.keywords}%; height: 100%; background: #1F3A5F; transition: width 0.5s ease;"></div>
                         </div>
                     </div>
                 </div>
@@ -374,8 +374,8 @@ class ATSChecker {
                             <span class="font-semibold">Readability</span>
                             <span class="text-accent-cyan font-bold">${result.metrics.readability}%</span>
                         </div>
-                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                            <div class="progress-fill" style="width: ${result.metrics.readability}%; height: 100%; background: linear-gradient(90deg, #00acc1, #00d4ff); transition: width 0.5s ease;"></div>
+                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(226,232,240,0.5); border-radius: 4px; overflow: hidden;">
+                            <div class="progress-fill" style="width: ${result.metrics.readability}%; height: 100%; background: #1F3A5F; transition: width 0.5s ease;"></div>
                         </div>
                     </div>
                 </div>
@@ -386,8 +386,8 @@ class ATSChecker {
                             <span class="font-semibold">Structure</span>
                             <span class="text-accent-cyan font-bold">${result.metrics.structure}%</span>
                         </div>
-                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                            <div class="progress-fill" style="width: ${result.metrics.structure}%; height: 100%; background: linear-gradient(90deg, #00acc1, #00d4ff); transition: width 0.5s ease;"></div>
+                        <div class="progress-bar" style="width: 100%; height: 8px; background-color: rgba(226,232,240,0.5); border-radius: 4px; overflow: hidden;">
+                            <div class="progress-fill" style="width: ${result.metrics.structure}%; height: 100%; background: #1F3A5F; transition: width 0.5s ease;"></div>
                         </div>
                     </div>
                 </div>
@@ -533,7 +533,7 @@ class ATSChecker {
         // Check if we have atsId from backend
         if (this.currentResult.atsId) {
             // Download DOCX report from backend
-            const downloadUrl = `http://localhost:8001/api/ats/download/${this.currentResult.atsId}`;
+            const downloadUrl = `${API.baseURL}/ats/download/${this.currentResult.atsId}`;
             
             fetch(downloadUrl)
                 .then(response => {

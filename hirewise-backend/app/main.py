@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_to_mongo, close_mongo_connection
 from app.config import settings
-from app.api import auth, ats, jd_matcher, feedback, calendar
+from app.api import auth, ats, jd_matcher, feedback, calendar, interview, landing, jobs
 import os
 
 # Ensure directories exist
@@ -42,6 +42,9 @@ app.include_router(ats.router)
 app.include_router(jd_matcher.router)
 app.include_router(feedback.router)
 app.include_router(calendar.router)
+app.include_router(interview.router)
+app.include_router(landing.router)
+app.include_router(jobs.router)
 
 @app.get("/")
 def read_root():

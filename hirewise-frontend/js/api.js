@@ -261,77 +261,50 @@ const API = {
         }
     },
 
-    // Interviews
+    // Interviews — voice only (Vapi)
     async getInterviews() {
-        const interviews = Storage.getInterviews();
-        return {
-            success: true,
-            data: interviews
-        };
-    },
-
-    async createInterview(interviewData) {
-        const interview = {
-            interviewId: 'int_' + Date.now(),
-            userId: Storage.getUser()?.userId,
-            date: new Date().toISOString(),
-            duration: 0,
-            score: 0,
-            questions: [],
-            answers: [],
-            feedback: null,
-            status: 'pending',
-            ...interviewData
-        };
-        
-        Storage.saveInterview(interview);
-        
-        return {
-            success: true,
-            data: interview,
-            message: 'Interview created'
-        };
-    },
-
-    async submitInterview(interviewId, responses) {
-        // Mock feedback generation for now
-        const score = Math.floor(Math.random() * 30) + 70;
-        
-        const feedback = {
-            toneAnalysis: 'Confident and professional tone detected.',
-            bodyLanguage: 'Good eye contact and posture.',
-            strengths: [
-                'Clear communication',
-                'Technical knowledge',
-                'Problem-solving approach'
-            ],
-            improvements: [
-                'Could elaborate more on examples',
-                'Practice STAR method for behavioral questions'
-            ]
-        };
-        
-        const interview = Storage.getInterviewById(interviewId);
-        if (interview) {
-            interview.score = score;
-            interview.feedback = feedback;
-            interview.answers = responses;
-            interview.status = 'completed';
-            interview.completedAt = new Date().toISOString();
-        }
-        
         const user = Storage.getUser();
-        if (user) {
-            user.totalPoints = (user.totalPoints || 0) + score;
-            user.streak = (user.streak || 0) + 1;
-            Storage.saveUser(user);
+        if (!user || !user.userId) return { success: false, message: 'User not found' };
+        try {
+            const response = await fetch(`${this.baseURL}/interview/sessions/${user.userId}`);
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
         }
-        
-        return {
-            success: true,
-            data: { interview, feedback, score },
-            message: 'Interview submitted successfully'
-        };
+    },
+
+    async startVapiInterview(formData) {
+        try {
+            const response = await fetch(`${this.baseURL}/interview/vapi/start`, {
+                method: 'POST',
+                body: formData
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async submitVapiReport(sessionId, transcript) {
+        try {
+            const response = await fetch(`${this.baseURL}/interview/vapi/report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId, transcript })
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async getInterviewReport(sessionId) {
+        try {
+            const response = await fetch(`${this.baseURL}/interview/report/${sessionId}`);
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
     },
 
     // JD Matcher - Connected to Backend
@@ -410,6 +383,84 @@ const API = {
             return result;
         } catch (error) {
             console.error('Detailed error in checkATS:', error);
+            return this.handleError(error);
+        }
+    },
+
+    // Jobs Portal
+    async discoverJobs({ query = '', location = '', remoteOnly = false, resumeFile = null, resumeId = '', useResume = false } = {}) {
+        try {
+            const user = Storage.getUser();
+            const formData = new FormData();
+
+            if (user?.userId) {
+                formData.append('user_id', user.userId);
+            }
+            if (query) {
+                formData.append('query', query);
+            }
+            if (location) {
+                formData.append('location', location);
+            }
+            if (remoteOnly) {
+                formData.append('remote_only', 'true');
+            }
+            formData.append('use_resume', useResume ? 'true' : 'false');
+            if (resumeFile) {
+                formData.append('resume_file', resumeFile);
+            }
+            if (resumeId) {
+                formData.append('resume_id', resumeId);
+            }
+
+            const response = await fetch(`${this.baseURL}/jobs/discover`, {
+                method: 'POST',
+                body: formData
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async applyToJob(job) {
+        try {
+            const user = Storage.getUser();
+            if (!user?.userId) {
+                throw new Error('User not found');
+            }
+
+            const response = await fetch(`${this.baseURL}/jobs/apply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: user.userId,
+                    job_title: job.title,
+                    company: job.company,
+                    source: job.source,
+                    job_url: job.url,
+                    location: job.location || null
+                })
+            });
+
+            return await this.handleResponse(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    },
+
+    async getAppliedJobs() {
+        try {
+            const user = Storage.getUser();
+            if (!user?.userId) {
+                return { success: true, data: [] };
+            }
+
+            const response = await fetch(`${this.baseURL}/jobs/applications/${user.userId}`);
+            return await this.handleResponse(response);
+        } catch (error) {
             return this.handleError(error);
         }
     },

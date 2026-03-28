@@ -3,242 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentication - HireWise</title>
+    <title>HireWise — Sign In</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/auth.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/theme.css?v=6">
+    <link rel="stylesheet" href="css/styles.css?v=6">
+    <link rel="stylesheet" href="css/auth.css?v=6">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 </head>
-<body class="bg-primary-dark text-white min-h-screen flex items-center justify-center">
-    <!-- Particle Background - Global -->
-    <canvas id="particle-canvas"></canvas>
-    
-    <div class="container mx-auto px-6 py-12">
-        <div class="max-w-md mx-auto">
-            <!-- Logo -->
-            <div class="text-center mb-8">
-                <a href="index.html" class="inline-flex items-center space-x-2">
-                    <img src="assets/images/logo.svg" alt="HireWise Logo" class="h-10 w-10" onerror="this.style.display='none'">
-                    <span class="text-3xl font-bold text-accent-cyan">HireWise</span>
-                </a>
-            </div>
+<body class="bg-[#F6F7F9] auth-page" style="font-family:'Inter',system-ui,sans-serif;">
+    <div class="auth-bg-grid" aria-hidden="true"></div>
+    <div class="auth-bg-noise" aria-hidden="true"></div>
+    <div class="auth-flight" aria-hidden="true">
+        <span class="auth-bird cyan" style="top:14%;left:-10%;--s:1.05;animation-duration:23s;animation-delay:-2s"></span>
+        <span class="auth-bird violet" style="top:28%;left:-20%;--s:.95;animation-duration:29s;animation-delay:-11s"></span>
+        <span class="auth-bird pink" style="top:52%;left:-12%;--s:.9;animation-duration:31s;animation-delay:-6s"></span>
+        <span class="auth-bird cyan" style="top:72%;left:-24%;--s:.82;animation-duration:35s;animation-delay:-16s"></span>
+        <span class="auth-bird violet" style="top:38%;left:-28%;--s:.76;animation-duration:33s;animation-delay:-9s"></span>
+    </div>
 
-            <!-- Auth Container -->
-            <div class="bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg p-8">
-                <!-- Tab Navigation -->
-                <div class="flex mb-8 border-b border-accent-cyan/20">
-                    <button id="login-tab" class="flex-1 py-3 font-semibold border-b-2 border-transparent hover:text-accent-cyan transition">
-                        Login
-                    </button>
-                    <button id="signup-tab" class="flex-1 py-3 font-semibold border-b-2 border-transparent hover:text-accent-cyan transition">
-                        Sign Up
+    <div class="auth-container">
+        <div class="auth-frame">
+            <section class="auth-left">
+                <div class="auth-topbar">
+                    <a href="index.html" class="back-link inline-flex">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        Back to home
+                    </a>
+                    <button class="theme-toggle-btn" id="theme-toggle" aria-label="Toggle dark mode">
+                        <svg class="sun-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+                        <svg class="moon-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                     </button>
                 </div>
 
-                <!-- Login Form -->
-                <form id="login-form" class="space-y-6 hidden">
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="login-email">Email</label>
-                        <input 
-                            type="email" 
-                            id="login-email" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="your@email.com"
-                            required
-                        >
+                <div class="auth-form-wrap">
+                    <div class="auth-brand-row">
+                        <div class="auth-brand-icon">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 00.659 1.591L19 14.5M14.25 3.104c.251.023.501.05.75.082M19 14.5l-2.47 2.47a2.25 2.25 0 01-1.591.659H9.061a2.25 2.25 0 01-1.591-.659L5 14.5m14 0V17a2.25 2.25 0 01-2.25 2.25H7.25A2.25 2.25 0 015 17v-2.5"/>
+                            </svg>
+                        </div>
+                        <span class="auth-brand-text">Hire<span>Wise</span></span>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="login-password">Password</label>
-                        <input 
-                            type="password" 
-                            id="login-password" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="••••••••"
-                            required
-                        >
+                    <h1 id="auth-heading" class="auth-heading">Welcome back</h1>
+                    <p id="auth-subheading" class="auth-subheading">Please enter your details to continue your interview prep journey.</p>
+
+                    <div class="auth-tabs">
+                        <button id="login-tab" class="auth-tab-btn">Log In</button>
+                        <button id="signup-tab" class="auth-tab-btn">Sign Up</button>
                     </div>
 
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="remember-me" class="mr-2 accent-accent-cyan">
-                            <span class="text-sm text-gray-400">Remember me</span>
-                        </label>
-                        <a href="#" class="text-sm text-accent-cyan hover:underline">Forgot Password?</a>
-                    </div>
+                    <!-- ===== LOGIN FORM ===== -->
+                    <form id="login-form">
+                        <div id="login-error" class="hidden text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3 mb-4"></div>
 
-                    <div id="login-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg text-sm"></div>
+                        <div class="form-group">
+                            <label>Email address</label>
+                            <input id="login-email" type="email" required placeholder="you@example.com" class="auth-input">
+                        </div>
 
-                    <button 
-                        type="submit" 
-                        class="w-full py-3 bg-accent-cyan text-white rounded-lg font-semibold hover:bg-accent-cyan/90 transition"
-                    >
-                        Login
-                    </button>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input id="login-password" type="password" required placeholder="••••••••" class="auth-input">
+                        </div>
 
-                    <p class="text-center text-sm text-gray-400">
-                        Don't have an account? 
-                        <a href="#" id="show-signup" class="text-accent-cyan hover:underline">Sign up</a>
-                    </p>
-                </form>
+                        <div class="auth-inline-row">
+                            <label class="remember-wrap">
+                                <input id="remember-me" type="checkbox">
+                                <span>Remember for 30 days</span>
+                            </label>
+                            <a href="#" class="auth-link">Forgot password</a>
+                        </div>
 
-                <!-- Signup Form -->
-                <form id="signup-form" class="space-y-6 hidden">
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-fullname">Full Name</label>
-                        <input 
-                            type="text" 
-                            id="signup-fullname" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="John Doe"
-                            required
-                        >
-                    </div>
+                        <button type="submit" class="auth-submit-btn">Sign in</button>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-email">Email</label>
-                        <input 
-                            type="email" 
-                            id="signup-email" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="your@email.com"
-                            required
-                        >
-                    </div>
+                        <p class="switch-copy">
+                            Don’t have an account? <a href="#" id="show-signup" class="auth-link strong">Sign up</a>
+                        </p>
+                    </form>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-phone">Phone Number</label>
-                        <input 
-                            type="tel" 
-                            id="signup-phone" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="+1 (555) 123-4567"
-                            required
-                        >
-                    </div>
+                    <!-- ===== SIGNUP FORM ===== -->
+                    <form id="signup-form" class="hidden">
+                        <div id="signup-error" class="hidden text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg p-3 mb-4"></div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-linkedin">LinkedIn Profile URL (Optional)</label>
-                        <input 
-                            type="url" 
-                            id="signup-linkedin" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="https://linkedin.com/in/yourprofile"
-                        >
-                    </div>
+                        <p class="signup-hint">Create your profile in under a minute. Optional fields can be added later.</p>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-resume">Upload Resume (PDF, DOCX) - Optional</label>
-                        <input 
-                            type="file" 
-                            id="signup-resume" 
-                            accept=".pdf,.doc,.docx"
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-accent-cyan/20 file:text-accent-cyan hover:file:bg-accent-cyan/30"
-                        >
-                    </div>
-
-                    <!-- Education Details -->
-                    <div class="border-t border-accent-cyan/20 pt-6">
-                        <h3 class="font-semibold mb-4 text-accent-cyan">Education Details</h3>
-                        
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-2" for="signup-degree">Degree</label>
-                                <input 
-                                    type="text" 
-                                    id="signup-degree" 
-                                    class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                                    placeholder="B.Tech"
-                                    required
-                                >
+                        <div class="signup-grid">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input id="signup-fullname" type="text" required placeholder="John Doe" class="auth-input">
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2" for="signup-field">Field of Study</label>
-                                <input 
-                                    type="text" 
-                                    id="signup-field" 
-                                    class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                                    placeholder="Computer Science"
-                                    required
-                                >
+
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input id="signup-email" type="email" required placeholder="you@example.com" class="auth-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Phone <span class="field-optional">(optional)</span></label>
+                                <input id="signup-phone" type="tel" placeholder="+1 (555) 000-0000" class="auth-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label>LinkedIn URL <span class="field-optional">(optional)</span></label>
+                                <input id="signup-linkedin" type="url" placeholder="https://linkedin.com/in/your-profile" class="auth-input">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label>Resume (PDF) <span class="field-optional">(optional)</span></label>
+                                <input id="signup-resume" type="file" accept=".pdf" class="auth-input auth-file-input">
+                            </div>
+
+                            <div class="education-wrap full-width">
+                                <p>Education</p>
+                                <div class="education-grid">
+                                    <div class="form-group">
+                                        <label>Degree</label>
+                                        <select id="signup-degree" class="auth-input">
+                                            <option value="">Select</option>
+                                            <option>High School</option>
+                                            <option>Associate's</option>
+                                            <option>Bachelor's</option>
+                                            <option>Master's</option>
+                                            <option>PhD</option>
+                                            <option>Other</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Field</label>
+                                        <input id="signup-field" type="text" placeholder="e.g. Computer Science" class="auth-input">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>University</label>
+                                        <input id="signup-university" type="text" placeholder="University name" class="auth-input">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Year</label>
+                                        <input id="signup-year" type="number" placeholder="2024" min="1950" max="2030" class="auth-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input id="signup-password" type="password" required minlength="6" placeholder="Min. 6 characters" class="auth-input">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Confirm Password</label>
+                                <input id="signup-confirm-password" type="password" required minlength="6" placeholder="Repeat password" class="auth-input">
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-2" for="signup-university">University</label>
-                            <input 
-                                type="text" 
-                                id="signup-university" 
-                                class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                                placeholder="XYZ University"
-                                required
-                            >
+                        <button type="submit" class="auth-submit-btn">Create account</button>
+
+                        <p class="terms-privacy mt-3">
+                            By signing up you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.
+                        </p>
+
+                        <p class="switch-copy">
+                            Already have an account? <a href="#" id="show-login" class="auth-link strong">Log in</a>
+                        </p>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="auth-right" aria-hidden="true">
+                <div class="right-bg-grid"></div>
+                <div class="right-glow top"></div>
+                <div class="right-glow bot"></div>
+
+                <!-- AI Analytics Dashboard -->
+                <div class="ai-dashboard">
+                    <div class="ai-dash-header">
+                        <div class="ai-live-badge">
+                            <span class="live-dot"></span>
+                            <span>AI ANALYSIS</span>
                         </div>
+                        <span class="ai-live-tag">LIVE</span>
+                    </div>
 
-                        <div>
-                            <label class="block text-sm font-medium mb-2" for="signup-year">Graduation Year</label>
-                            <input 
-                                type="number" 
-                                id="signup-year" 
-                                min="1950" 
-                                max="2030"
-                                class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                                placeholder="2023"
-                                required
-                            >
+                    <div class="ai-score-ring">
+                        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#06b6d4"/>
+                                </linearGradient>
+                            </defs>
+                            <circle cx="60" cy="60" r="50" class="ring-track"/>
+                            <circle cx="60" cy="60" r="50" class="ring-fill"/>
+                        </svg>
+                        <div class="ring-center">
+                            <div class="ring-number">94<span>%</span></div>
+                            <div class="ring-label">Readiness</div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-password">Password</label>
-                        <input 
-                            type="password" 
-                            id="signup-password" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="••••••••"
-                            minlength="8"
-                            required
-                        >
-                        <p class="text-xs text-gray-400 mt-1">At least 8 characters</p>
+                    <div class="ai-metrics">
+                        <div class="ai-metric">
+                            <span class="am-label">Interview Score</span>
+                            <div class="am-bar-track"><div class="am-bar" style="--aw:94%;--ac:#6366f1"></div></div>
+                            <span class="am-val">94%</span>
+                        </div>
+                        <div class="ai-metric">
+                            <span class="am-label">ATS Score</span>
+                            <div class="am-bar-track"><div class="am-bar" style="--aw:88%;--ac:#06b6d4"></div></div>
+                            <span class="am-val">88</span>
+                        </div>
+                        <div class="ai-metric">
+                            <span class="am-label">JD Match</span>
+                            <div class="am-bar-track"><div class="am-bar" style="--aw:92%;--ac:#a78bfa"></div></div>
+                            <span class="am-val">92%</span>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium mb-2" for="signup-confirm-password">Confirm Password</label>
-                        <input 
-                            type="password" 
-                            id="signup-confirm-password" 
-                            class="w-full px-4 py-3 bg-primary-dark border border-accent-cyan/30 rounded-lg focus:outline-none focus:border-accent-cyan text-white"
-                            placeholder="••••••••"
-                            required
-                        >
+                    <div class="ai-terminal">
+                        <span class="term-prompt">›_</span>
+                        <span class="term-text" id="term-text-display">Scanning resume keywords...</span>
+                        <span class="term-cursor"></span>
                     </div>
+                </div>
 
-                    <div id="signup-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-lg text-sm"></div>
+                <!-- Floating feature pills -->
+                <div class="feat-pill pill-1">
+                    <svg class="pill-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <span>ATS Checker</span>
+                </div>
+                <div class="feat-pill pill-2">
+                    <svg class="pill-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    <span>AI Interview</span>
+                </div>
 
-                    <button 
-                        type="submit" 
-                        class="w-full py-3 bg-accent-cyan text-white rounded-lg font-semibold hover:bg-accent-cyan/90 transition"
-                    >
-                        Create Account
-                    </button>
-
-                    <p class="text-center text-sm text-gray-400">
-                        Already have an account? 
-                        <a href="#" id="show-login" class="text-accent-cyan hover:underline">Login</a>
-                    </p>
-                </form>
-            </div>
-
-            <!-- Back to Home -->
-            <div class="text-center mt-6">
-                <a href="index.html" class="text-sm text-gray-400 hover:text-accent-cyan transition">← Back to Home</a>
-            </div>
+                <div class="visual-caption">
+                    <h3 id="auth-visual-title">Build your job-winning profile</h3>
+                    <p id="auth-visual-subtitle">Set up once, then practice with AI interviews, ATS scoring, and JD match insights.</p>
+                </div>
+            </aside>
         </div>
     </div>
 
-    <script src="js/particles.js"></script>
+    <!-- Scripts -->
+    <script src="js/theme-toggle.js?v=4"></script>
     <script src="js/storage.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
+
+    <script>
+        /* Terminal text cycling for right panel */
+        (function () {
+            var phrases = [
+                'Scanning resume keywords...',
+                'Analyzing interview responses...',
+                'Matching job description...',
+                'Evaluating ATS compatibility...',
+                'Generating improvement tips...'
+            ];
+            var i = 0;
+            var el = document.getElementById('term-text-display');
+            if (!el) return;
+            setInterval(function () {
+                el.style.opacity = '0';
+                setTimeout(function () {
+                    i = (i + 1) % phrases.length;
+                    el.textContent = phrases[i];
+                    el.style.opacity = '1';
+                }, 300);
+            }, 3000);
+        })();
+    </script>
+
 </body>
 </html>

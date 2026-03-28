@@ -28,6 +28,9 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+/dump/
+*.bson
+
 
 # ========================
 # IDE & Editors

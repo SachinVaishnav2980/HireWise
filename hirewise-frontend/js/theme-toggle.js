@@ -1,28 +1,21 @@
-// Theme Toggle – persists preference in localStorage
+// Theme Toggle – Force Dark Theme Only
 (function () {
     const STORAGE_KEY = 'hirewise_theme';
-
-    function getPreferredTheme() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) return stored;
-        return 'dark';
-    }
+    const FORCED_THEME = 'dark'; // Always use dark theme
 
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem(STORAGE_KEY, theme);
     }
 
-    // Apply immediately to prevent flash
-    applyTheme(getPreferredTheme());
+    // Apply dark theme immediately to prevent flash
+    applyTheme(FORCED_THEME);
 
     document.addEventListener('DOMContentLoaded', function () {
         var toggle = document.getElementById('theme-toggle');
-        if (!toggle) return;
-
-        toggle.addEventListener('click', function () {
-            var current = document.documentElement.getAttribute('data-theme') || 'light';
-            applyTheme(current === 'dark' ? 'light' : 'dark');
-        });
+        if (toggle) {
+            // Disable the toggle - dark theme only
+            toggle.style.display = 'none';
+        }
     });
 })();

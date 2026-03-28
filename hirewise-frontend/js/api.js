@@ -131,7 +131,8 @@ const API = {
                 body: JSON.stringify({
                     full_name: updates.fullName,
                     phone: updates.phone,
-                    education: updates.education
+                    education: updates.education,
+                    profile_picture: updates.profilePicture || null
                 })
             });
             
@@ -166,12 +167,19 @@ const API = {
         }
     },
 
-    async getResumeFile(resumeId) {
+    async getResumeFile(resumeId, options = {}) {
+        const { download = false } = options;
         try {
+            const user = Storage.getUser();
+            const userQuery = user?.userId ? `?user_id=${encodeURIComponent(user.userId)}` : '';
+            const endpoint = download
+                ? `${this.baseURL}/ats/resumes/download/${resumeId}${userQuery}`
+                : `${this.baseURL}/ats/resumes/file/${resumeId}${userQuery}`;
+
             console.log('Fetching resume file for ID:', resumeId);
-            console.log('URL:', `${this.baseURL}/ats/resumes/file/${resumeId}`);
+            console.log('URL:', endpoint);
             
-            const response = await fetch(`${this.baseURL}/ats/resumes/file/${resumeId}`);
+            const response = await fetch(endpoint);
             console.log('Response status:', response.status);
             console.log('Response ok:', response.ok);
             console.log('Response headers:', response.headers);
@@ -193,7 +201,9 @@ const API = {
 
     async deleteResume(resumeId) {
         try {
-            const response = await fetch(`${this.baseURL}/ats/resumes/${resumeId}`, {
+            const user = Storage.getUser();
+            const userQuery = user?.userId ? `?user_id=${encodeURIComponent(user.userId)}` : '';
+            const response = await fetch(`${this.baseURL}/ats/resumes/${resumeId}${userQuery}`, {
                 method: 'DELETE'
             });
             return await this.handleResponse(response);

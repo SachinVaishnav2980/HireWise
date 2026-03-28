@@ -1,71 +1,55 @@
 # HireWise
 
-AI-powered interview preparation platform with ATS resume checking, JD matching, and mock interviews.
+AI-powered interview prep platform with ATS resume checks, JD matching, and mock interview workflows.
 
-## Tech Stack
+## Stack
 
-**Frontend:** HTML, CSS, JavaScript, Tailwind CSS  
-**Backend:** FastAPI, MongoDB, Google Gemini AI, spaCy
+- Frontend: HTML, CSS, JavaScript (Tailwind)
+- Backend: FastAPI + MongoDB
+- AI: Gemini/Groq integrations
 
-## Project Structure
+## Run locally
 
-```
-HireWise/
-├── hirewise-frontend/      # Static frontend
-│   ├── index.html          # Landing page
-│   ├── auth.html           # Authentication
-│   ├── dashboard.html      # Main dashboard
-│   ├── css/                # Stylesheets
-│   ├── js/                 # JavaScript modules
-│   ├── components/         # HTML components
-│   └── data/               # Config & mock data
-│
-└── hirewise-backend/       # FastAPI backend
-    ├── app/
-    │   ├── main.py         # Application entry
-    │   ├── config.py       # Configuration
-    │   ├── database.py     # MongoDB setup
-    │   ├── api/            # Route handlers
-    │   ├── models/         # Pydantic models
-    │   ├── services/       # Business logic
-    │   └── utils/          # Utilities
-    ├── uploads/            # PDF storage
-    ├── reports/            # Generated reports
-    └── requirements.txt    # Dependencies
-```
-
-## Quick Start
-
-### Backend
+### 1) Backend
 
 ```bash
 cd hirewise-backend
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
-cp .env.example .env    # Configure your environment
-start_server.bat        # Windows
+copy .env.example .env
+start_server.bat
 ```
 
-### Frontend
+### 2) Frontend
 
 ```bash
 cd hirewise-frontend
 python -m http.server 8000
 ```
 
-**Backend:** http://localhost:8001  
-**Frontend:** http://localhost:8000  
-**API Docs:** http://localhost:8001/docs
+- Frontend: http://localhost:8000
+- Backend: http://localhost:8001
+- API docs: http://localhost:8001/docs
 
-## Environment Variables
+## Environment (backend)
+
+Set values in `hirewise-backend/.env`:
 
 ```env
 MONGODB_URL=mongodb://localhost:27017
 MONGODB_DB_NAME=hirewise
-GEMINI_API_KEY=your-api-key
+GEMINI_API_KEY=your_gemini_api_key
+GROQ_API_KEY=your_groq_api_key
+VAPI_PUBLIC_KEY=your_vapi_public_key
 FRONTEND_URL=http://localhost:8000
 ```
 
+## Repo hygiene
+
+- Generated files in `hirewise-backend/uploads/` and `hirewise-backend/reports/` are ignored (except `.gitkeep`)
+- Database dumps and BSON snapshots are ignored
+- Do not commit real API keys or user data
+
 ## License
 
-MIT License
+MIT

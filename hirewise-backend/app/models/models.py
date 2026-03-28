@@ -32,6 +32,7 @@ class UserCreate(UserBase):
 class UserInDB(UserBase):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     password_hash: str
+    profile_picture: Optional[str] = None  # Base64 encoded image or URL
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
     
@@ -98,8 +99,14 @@ class ATSResult(BaseModel):
     keywords_score: float
     readability_score: float
     structure_score: float
-    suggestions: List[dict]
+    experience_score: Optional[float] = None
+    ai_score: Optional[float] = None
+    component_scores: Optional[dict] = None
+    component_confidence: Optional[dict] = None
+    suggestions: List[str]
+    warnings: Optional[List[str]] = None
     ai_analysis: Optional[dict] = None
+    evaluation_metadata: Optional[dict] = None
     report_path: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     

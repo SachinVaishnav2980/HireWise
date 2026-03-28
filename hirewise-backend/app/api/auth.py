@@ -122,6 +122,7 @@ async def get_profile(user_id: str, db = Depends(get_db)):
             "email": user["email"],
             "fullName": user["full_name"],
             "phone": user.get("phone"),
+            "profilePicture": user.get("profile_picture"),
             "education": education,
             "createdAt": user["created_at"].isoformat(),
             "lastLogin": user.get("last_login").isoformat() if user.get("last_login") else None
@@ -132,6 +133,7 @@ class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
     education: Optional[list] = None
+    profile_picture: Optional[str] = None  # Base64 encoded image
 
 @router.put("/profile/{user_id}")
 async def update_profile(user_id: str, request: UpdateProfileRequest, db = Depends(get_db)):
@@ -150,6 +152,8 @@ async def update_profile(user_id: str, request: UpdateProfileRequest, db = Depen
         update_fields["full_name"] = request.full_name
     if request.phone is not None:
         update_fields["phone"] = request.phone
+    if request.profile_picture is not None:
+        update_fields["profile_picture"] = request.profile_picture
     
     if update_fields:
         await db.users.update_one(
@@ -197,6 +201,7 @@ async def update_profile(user_id: str, request: UpdateProfileRequest, db = Depen
             "email": updated_user["email"],
             "fullName": updated_user["full_name"],
             "phone": updated_user.get("phone"),
+            "profilePicture": updated_user.get("profile_picture"),
             "education": education
         },
         "message": "Profile updated successfully"

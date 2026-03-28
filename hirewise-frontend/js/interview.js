@@ -465,6 +465,9 @@ class InterviewManager {
         if (result.success) {
             document.getElementById('voice-interview-modal')?.remove();
             this._showReport(result.data.report);
+            if (typeof window.refreshDashboardAnalytics === 'function') {
+                window.refreshDashboardAnalytics();
+            }
         } else {
             if (status) status.textContent = 'Failed to generate report: ' + (result.message || 'Unknown error');
         }

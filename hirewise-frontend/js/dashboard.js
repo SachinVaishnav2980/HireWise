@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initPerformanceChart();
 });
 
+let performanceChartInstance = null;
+
 function initDashboard() {
     // Set initial view
     showView('dashboard');
@@ -213,28 +215,51 @@ function loadUserData() {
 
 async function loadDashboardStats() {
     try {
-        const response = await API.getDashboardStats();
-        
-        if (response.success) {
-            const stats = response.data;
-            const totalInterviews = Number(stats.totalInterviews) || 0;
-            const avgScore = Number(stats.avgScore) || 0;
-            const streak = Number(stats.streak) || 0;
-            
-            // Update visual metrics values
-            const totalInterviewsEl = document.getElementById('total-interviews');
-            const avgScoreEl = document.getElementById('avg-score');
-            const streakDisplayEl = document.getElementById('streak-display');
+        const [statsResponse, interviewsResponse] = await Promise.all([
+            API.getDashboardStats(),
+            API.getInterviews()
+        ]);
 
-            if (totalInterviewsEl) totalInterviewsEl.textContent = totalInterviews;
-            if (avgScoreEl) avgScoreEl.textContent = `${Math.round(avgScore)}%`;
-            if (streakDisplayEl) streakDisplayEl.textContent = `${streak}d`;
+        if (!statsResponse.success) return;
 
-            updateVisualMetrics({ totalInterviews, avgScore, streak });
-            
-            // Update recent activity
-            loadRecentActivity(stats.recentInterviews);
+        const stats = statsResponse.data;
+        let totalInterviews = Number(stats.totalInterviews) || 0;
+        let avgScore = Number(stats.avgScore) || 0;
+        const streak = Number(stats.streak) || 0;
+        let recentInterviews = Array.isArray(stats.recentInterviews) ? stats.recentInterviews : [];
+        let latestScore = 0;
+        let scoreDelta = 0;
+
+        if (interviewsResponse.success && Array.isArray(interviewsResponse.data)) {
+            const normalized = normalizeInterviewScoreRecords(interviewsResponse.data);
+            if (normalized.length > 0) {
+                totalInterviews = normalized.length;
+                avgScore = Math.round(normalized.reduce((sum, record) => sum + record.score, 0) / normalized.length);
+                latestScore = normalized[normalized.length - 1].score;
+                scoreDelta = normalized.length > 1
+                    ? latestScore - normalized[normalized.length - 2].score
+                    : 0;
+
+                recentInterviews = normalized
+                    .slice(-5)
+                    .reverse()
+                    .map((record) => ({ date: record.dateISO, score: record.score }));
+            }
         }
+
+        const totalInterviewsEl = document.getElementById('total-interviews');
+        const avgScoreEl = document.getElementById('avg-score');
+        const streakDisplayEl = document.getElementById('streak-display');
+
+        if (totalInterviewsEl) totalInterviewsEl.textContent = totalInterviews;
+        if (avgScoreEl) avgScoreEl.textContent = `${Math.round(avgScore)}%`;
+        if (streakDisplayEl) streakDisplayEl.textContent = `${streak}d`;
+
+        updateVisualMetrics({ totalInterviews, avgScore, streak });
+        updateMetricAssistiveText({ totalInterviews, avgScore, streak, latestScore, scoreDelta });
+        loadRecentActivity(recentInterviews);
+
+        await initPerformanceChart();
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
     }
@@ -271,16 +296,48 @@ function updateVisualMetrics({ totalInterviews = 0, avgScore = 0, streak = 0 }) 
     }
 }
 
+function updateMetricAssistiveText({ totalInterviews = 0, avgScore = 0, streak = 0, latestScore = 0, scoreDelta = 0 }) {
+    const sessionsText = document.getElementById('sessions-progress');
+    const scoreText = document.getElementById('score-trend');
+    const streakText = document.getElementById('streak-progress');
+
+    if (sessionsText) {
+        sessionsText.textContent = totalInterviews > 0
+            ? `${totalInterviews} completed interviews tracked`
+            : 'No completed sessions yet';
+    }
+
+    if (scoreText) {
+        if (latestScore > 0) {
+            const direction = scoreDelta > 0 ? '▲' : scoreDelta < 0 ? '▼' : '•';
+            const deltaText = scoreDelta === 0 ? 'no change' : `${Math.abs(Math.round(scoreDelta))} pts`;
+            scoreText.textContent = `Latest ${latestScore}% ${direction} ${deltaText}`;
+        } else {
+            scoreText.textContent = avgScore > 0
+                ? `Average score holding at ${avgScore}%`
+                : 'Complete interviews to track trend';
+        }
+    }
+
+    if (streakText) {
+        streakText.textContent = streak > 0
+            ? `${streak}-day consistency streak`
+            : 'Build consistency with daily practice';
+    }
+}
+
 function loadRecentActivity(interviews) {
     const activityContainer = document.getElementById('recent-activity');
     if (!activityContainer) return;
     
-    if (interviews.length === 0) {
+    const safeInterviews = Array.isArray(interviews) ? interviews : [];
+
+    if (safeInterviews.length === 0) {
         activityContainer.innerHTML = '<p class="text-gray-400 text-sm">No recent activity</p>';
         return;
     }
     
-    activityContainer.innerHTML = interviews.map(interview => `
+    activityContainer.innerHTML = safeInterviews.map(interview => `
         <div class="activity-item">
             <div class="flex justify-between items-start">
                 <div>
@@ -347,11 +404,27 @@ function initCalendar() {
         dayMaxEvents: false,
         eventDisplay: 'block',
         displayEventTime: false,
+        eventContent: function() {
+            return {
+                html: '<span class="calendar-event-pill" aria-hidden="true"></span>'
+            };
+        },
+        eventsSet: function(events) {
+            decorateCalendarActivityDots(calendarEl, events);
+        },
         eventDidMount: function(info) {
             // Add class to day cell to show it has activities
             const dayEl = info.el.closest('.fc-daygrid-day');
             if (dayEl) {
                 dayEl.classList.add('has-activity');
+            }
+        },
+        dayCellDidMount: function(info) {
+            const dayFrame = info.el.querySelector('.fc-daygrid-day-frame');
+            if (dayFrame && !dayFrame.querySelector('.calendar-day-dot-anchor')) {
+                const dotAnchor = document.createElement('span');
+                dotAnchor.className = 'calendar-day-dot-anchor';
+                dayFrame.appendChild(dotAnchor);
             }
         }
     });
@@ -363,6 +436,41 @@ function initCalendar() {
     
     // Update upcoming sessions
     updateUpcomingSessions();
+}
+
+function decorateCalendarActivityDots(calendarEl, events = []) {
+    if (!calendarEl) return;
+
+    const countsByDate = new Map();
+    events.forEach((event) => {
+        const dateKey = event.startStr?.split('T')[0];
+        if (!dateKey) return;
+        countsByDate.set(dateKey, (countsByDate.get(dateKey) || 0) + 1);
+    });
+
+    const dayCells = calendarEl.querySelectorAll('.fc-daygrid-day');
+    dayCells.forEach((dayCell) => {
+        const dateKey = dayCell.getAttribute('data-date');
+        const activityCount = dateKey ? (countsByDate.get(dateKey) || 0) : 0;
+
+        dayCell.classList.toggle('has-activity', activityCount > 0);
+
+        const anchor = dayCell.querySelector('.calendar-day-dot-anchor') || dayCell.querySelector('.fc-daygrid-day-frame');
+        if (!anchor) return;
+
+        let dot = anchor.querySelector('.calendar-day-dot');
+        if (activityCount > 0) {
+            if (!dot) {
+                dot = document.createElement('span');
+                dot.className = 'calendar-day-dot';
+                anchor.appendChild(dot);
+            }
+            dot.setAttribute('data-count', String(activityCount));
+            dot.title = `${activityCount} activity${activityCount > 1 ? 'ies' : ''}`;
+        } else if (dot) {
+            dot.remove();
+        }
+    });
 }
 
 function getActivityColor(activityType, status) {
@@ -386,7 +494,7 @@ function getActivityColor(activityType, status) {
 async function showDayActivities(dateStr) {
     try {
         // Remove existing modal if any
-        const existingModal = document.querySelector('.modal-overlay');
+        const existingModal = document.querySelector('.calendar-day-overlay');
         if (existingModal) {
             existingModal.remove();
         }
@@ -410,12 +518,12 @@ async function showDayActivities(dateStr) {
         
         // Create modal overlay
         const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
+        overlay.className = 'modal-backdrop calendar-day-overlay';
         overlay.onclick = () => overlay.remove();
         
         // Create modal
         const modal = document.createElement('div');
-        modal.className = 'day-activity-modal';
+        modal.className = 'modal day-activity-modal unified-dashboard-modal';
         modal.onclick = (e) => e.stopPropagation();
         
         // Generate activities HTML
@@ -457,10 +565,13 @@ async function showDayActivities(dateStr) {
         modal.innerHTML = `
             <div class="modal-header">
                 <h3>${dateFormatted}</h3>
-                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+                <button class="modal-close" onclick="this.closest('.calendar-day-overlay').remove()">×</button>
             </div>
             <div class="modal-body">
                 ${activitiesHTML}
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.calendar-day-overlay').remove()">Close</button>
             </div>
         `;
         
@@ -541,17 +652,14 @@ function getCalendarEvents() {
     }));
 }
 
-function initPerformanceChart() {
+async function initPerformanceChart() {
     const ctx = document.getElementById('performance-chart');
     if (!ctx) return;
-    
-    const interviews = Storage.getInterviews()
-        .filter(i => i.status === 'completed')
-        .slice(-10); // Last 10 interviews
-    
-    const labels = interviews.map((interview, index) => {
-        if (interview.date) {
-            return new Date(interview.date).toLocaleDateString('en-US', {
+    const scoreRecords = await getInterviewScoreRecords();
+
+    const labels = scoreRecords.map((record, index) => {
+        if (record.dateISO) {
+            return new Date(record.dateISO).toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric'
             });
@@ -559,7 +667,7 @@ function initPerformanceChart() {
         return `Session ${index + 1}`;
     });
 
-    const scores = interviews.map(i => i.score || 0);
+    const scores = scoreRecords.map((record) => record.score || 0);
 
     // Keep graph visible even for new users with no completed interviews yet
     const graphLabels = labels.length > 0 ? labels : ['Start'];
@@ -571,12 +679,16 @@ function initPerformanceChart() {
     areaGradient.addColorStop(0.45, 'rgba(255, 189, 72, 0.12)');
     areaGradient.addColorStop(1, 'rgba(255, 189, 72, 0)');
 
-    new Chart(ctx, {
+    if (performanceChartInstance) {
+        performanceChartInstance.destroy();
+    }
+
+    performanceChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels: graphLabels,
             datasets: [{
-                label: 'User Progress',
+                label: 'Interview Marks',
                 data: graphScores,
                 borderColor: '#f7c948',
                 borderWidth: 2.5,
@@ -605,7 +717,7 @@ function initPerformanceChart() {
                     bodyColor: '#d7e7ff',
                     displayColors: false,
                     callbacks: {
-                        label: (context) => `Score: ${context.parsed.y}`
+                        label: (context) => `Marks: ${context.parsed.y}/100`
                     }
                 }
             },
@@ -638,6 +750,89 @@ function initPerformanceChart() {
             }
         }
     });
+
+    updatePerformanceSummary(graphScores);
+}
+
+async function getInterviewScoreRecords() {
+    try {
+        const response = await API.getInterviews();
+        if (response.success && Array.isArray(response.data)) {
+            return normalizeInterviewScoreRecords(response.data).slice(-12);
+        }
+    } catch (error) {
+        console.error('Error loading interview score records:', error);
+    }
+
+    const fallback = (Storage.getInterviews() || [])
+        .filter((item) => item.status === 'completed' && Number.isFinite(Number(item.score)))
+        .map((item) => ({
+            score: Number(item.score),
+            dateISO: item.date || item.created_at || item.updated_at || null
+        }));
+
+    return normalizeInterviewScoreRecords(fallback).slice(-12);
+}
+
+function normalizeInterviewScoreRecords(interviews = []) {
+    return interviews
+        .map((item) => {
+            const scoreCandidate =
+                item?.score ??
+                item?.overall_score ??
+                item?.final_score ??
+                item?.report?.overall_score ??
+                item?.result?.overall_score ??
+                item?.metrics?.overall_score;
+
+            const parsedScore = Number(scoreCandidate);
+            const status = (item?.status || '').toLowerCase();
+            const isCompleted = status === 'completed' || Number.isFinite(parsedScore);
+            const dateISO = item?.completed_at || item?.date || item?.updated_at || item?.created_at || null;
+
+            return {
+                score: Number.isFinite(parsedScore) ? Math.max(0, Math.min(100, Math.round(parsedScore))) : null,
+                dateISO,
+                isCompleted
+            };
+        })
+        .filter((item) => item.isCompleted && Number.isFinite(item.score))
+        .sort((a, b) => {
+            const dateA = a.dateISO ? new Date(a.dateISO).getTime() : 0;
+            const dateB = b.dateISO ? new Date(b.dateISO).getTime() : 0;
+            return dateA - dateB;
+        });
+}
+
+function updatePerformanceSummary(scores) {
+    const latestEl = document.getElementById('chart-latest-score');
+    const progressEl = document.getElementById('chart-improvement');
+    if (!latestEl || !progressEl) return;
+
+    const validScores = scores.filter((score) => Number.isFinite(Number(score)));
+    if (validScores.length === 0 || (validScores.length === 1 && validScores[0] === 0)) {
+        latestEl.textContent = 'Latest: —';
+        progressEl.textContent = 'Progress: complete an interview to begin';
+        return;
+    }
+
+    const latestScore = Number(validScores[validScores.length - 1]);
+    latestEl.textContent = `Latest: ${Math.round(latestScore)}/100`;
+
+    if (validScores.length === 1) {
+        progressEl.textContent = 'Progress: first score recorded';
+        return;
+    }
+
+    const prevScore = Number(validScores[validScores.length - 2]);
+    const delta = Math.round(latestScore - prevScore);
+    if (delta === 0) {
+        progressEl.textContent = 'Progress: steady performance';
+    } else if (delta > 0) {
+        progressEl.textContent = `Progress: +${delta} points from last interview`;
+    } else {
+        progressEl.textContent = `Progress: ${delta} points from last interview`;
+    }
 }
 
 function loadResume() {
@@ -653,57 +848,53 @@ function loadResume() {
             const resumes = response.data;
             
             resumePreview.innerHTML = `
-                <div class="space-y-4">
-                    <h2 class="text-2xl font-bold mb-4">Your Resumes</h2>
+                <div class="space-y-4 resumes-shell">
+                    <div class="resumes-toolbar">
+                        <h2 class="text-2xl font-bold">Your Resumes</h2>
+                        <button onclick="uploadResume()" class="resume-upload-btn" title="Upload New Resume">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Upload Resume
+                        </button>
+                    </div>
                     ${resumes.map(resume => `
-                        <div class="p-4 bg-primary-dark-secondary border border-accent-cyan/20 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <div class="flex-1">
-                                    <h3 class="font-semibold text-lg">${resume.fileName}</h3>
-                                    <p class="text-sm text-gray-400">Uploaded: ${new Date(resume.uploadedAt).toLocaleDateString()}</p>
-                                    ${resume.atsScore ? `<p class="text-sm text-accent-cyan">ATS Score: ${resume.atsScore}%</p>` : ''}
-                                </div>
-                                <div class="flex gap-2">
-                                    <button onclick="viewResume('${resume.resumeId}')" 
-                                            class="px-4 py-2 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition flex items-center gap-2"
-                                            title="View Resume">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                        View
-                                    </button>
-                                    <button onclick="downloadResume('${resume.resumeId}', '${resume.fileName}')" 
-                                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
-                                            title="Download Resume">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                                        </svg>
-                                        Download
-                                    </button>
-                                    <button onclick="deleteResume('${resume.resumeId}')" 
-                                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
-                                            title="Delete Resume">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                        Delete
-                                    </button>
-                                </div>
+                        <div class="resume-card">
+                            <div class="resume-meta">
+                                <h3 class="resume-name">${resume.fileName}</h3>
+                                <p class="resume-date">Uploaded: ${new Date(resume.uploadedAt).toLocaleDateString()}</p>
+                                ${resume.atsScore ? `<p class="resume-score">ATS Score: ${resume.atsScore}%</p>` : '<p class="resume-score muted">ATS pending</p>'}
+                            </div>
+                            <div class="resume-actions">
+                                <button onclick="viewResume('${resume.resumeId}')" class="resume-action-btn view" title="View Resume">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    View
+                                </button>
+                                <button onclick="downloadResume('${resume.resumeId}', '${resume.fileName}')" class="resume-action-btn download" title="Download Resume">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Download
+                                </button>
+                                <button onclick="deleteResume('${resume.resumeId}')" class="resume-action-btn delete" title="Delete Resume">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Delete
+                                </button>
                             </div>
                         </div>
                     `).join('')}
-                    <button onclick="uploadResume()" 
-                            class="w-full px-6 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">
-                        + Upload New Resume
-                    </button>
                 </div>
             `;
         } else {
             resumePreview.innerHTML = `
-                <div class="text-center py-12">
+                <div class="text-center py-12 resume-empty-state">
                     <p class="text-gray-400 mb-4">No resume uploaded yet</p>
-                    <button onclick="uploadResume()" class="px-6 py-3 bg-accent-cyan text-white rounded-lg hover:bg-accent-cyan/90 transition">
+                    <button onclick="uploadResume()" class="resume-upload-btn mx-auto">
                         Upload Resume
                     </button>
                 </div>
@@ -729,7 +920,7 @@ async function viewResume(resumeId) {
     try {
         showNotification('Loading resume...', 'info');
         
-        const blob = await API.getResumeFile(resumeId);
+        const blob = await API.getResumeFile(resumeId, { download: false });
         console.log('Blob received:', {
             type: blob?.type,
             size: blob?.size,
@@ -744,7 +935,7 @@ async function viewResume(resumeId) {
             const modal = document.createElement('div');
             modal.className = 'modal-backdrop';
             modal.innerHTML = `
-                <div class="modal-container" style="max-width: 90vw; width: 1200px; height: 90vh;">
+                <div class="modal-container resume-viewer-modal" style="max-width: 90vw; width: 1200px; height: 90vh;">
                     <div class="modal-header">
                         <h2 class="text-2xl font-bold">Resume Viewer</h2>
                         <button onclick="this.closest('.modal-backdrop').remove(); URL.revokeObjectURL('${url}')" class="text-gray-400 hover:text-white">
@@ -763,12 +954,20 @@ async function viewResume(resumeId) {
             showNotification('Resume loaded successfully', 'success');
         } else {
             console.error('Invalid blob received');
-            showNotification('Failed to load resume file - blob is empty', 'error');
+            const user = Storage.getUser();
+            const userQuery = user?.userId ? `?user_id=${encodeURIComponent(user.userId)}` : '';
+            const fallbackUrl = `${API.baseURL}/ats/resumes/file/${encodeURIComponent(resumeId)}${userQuery}`;
+            window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+            showNotification('Opening resume in a new tab...', 'info');
         }
     } catch (error) {
         console.error('=== VIEW RESUME ERROR ===');
         console.error('Error details:', error);
-        showNotification('Error: ' + error.message, 'error');
+        const user = Storage.getUser();
+        const userQuery = user?.userId ? `?user_id=${encodeURIComponent(user.userId)}` : '';
+        const fallbackUrl = `${API.baseURL}/ats/resumes/file/${encodeURIComponent(resumeId)}${userQuery}`;
+        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+        showNotification('Preview had an issue, opened in a new tab instead.', 'warning');
     }
 }
 
@@ -780,7 +979,7 @@ async function downloadResume(resumeId, fileName) {
     try {
         showNotification('Downloading resume...', 'info');
         
-        const blob = await API.getResumeFile(resumeId);
+        const blob = await API.getResumeFile(resumeId, { download: true });
         console.log('Blob received for download:', {
             type: blob?.type,
             size: blob?.size,
@@ -810,12 +1009,20 @@ async function downloadResume(resumeId, fileName) {
             showNotification('Resume downloaded successfully!', 'success');
         } else {
             console.error('Invalid blob for download');
-            showNotification('Failed to download resume - blob is empty', 'error');
+            const user = Storage.getUser();
+            const userQuery = user?.userId ? `?user_id=${encodeURIComponent(user.userId)}` : '';
+            const fallbackUrl = `${API.baseURL}/ats/resumes/download/${encodeURIComponent(resumeId)}${userQuery}`;
+            window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+            showNotification('Download started in a new tab.', 'info');
         }
     } catch (error) {
         console.error('=== DOWNLOAD RESUME ERROR ===');
         console.error('Error details:', error);
-        showNotification('Error: ' + error.message, 'error');
+        const user = Storage.getUser();
+        const userQuery = user?.userId ? `?user_id=${encodeURIComponent(user.userId)}` : '';
+        const fallbackUrl = `${API.baseURL}/ats/resumes/download/${encodeURIComponent(resumeId)}${userQuery}`;
+        window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+        showNotification('Download fallback opened in new tab.', 'warning');
     }
 }
 
@@ -912,55 +1119,63 @@ function loadJobs() {
     if (!jobsView) return;
 
     jobsView.innerHTML = `
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-[#1E1E1E] mb-2">Job Discovery</h1>
-        <p class="text-[#6B7280] mb-6 max-w-2xl">Upload a resume to get role recommendations and discover matching openings, or search jobs directly without uploading.</p>
+        <div class="jobs-shell">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-[#1E1E1E] mb-2">Job Discovery</h1>
+            <p class="text-[#6B7280] mb-6 max-w-2xl">Upload a resume to get role recommendations and discover matching openings, or search jobs directly without uploading.</p>
 
-        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm mb-6">
-            <form id="jobs-search-form" class="grid gap-4 md:grid-cols-12">
-                <div class="md:col-span-4">
-                    <label class="block text-sm font-semibold text-[#374151] mb-1">Role or Keyword</label>
-                    <input id="jobs-query" type="text" placeholder="e.g. Software Engineer"
-                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F]" />
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-sm font-semibold text-[#374151] mb-1">Location</label>
-                    <input id="jobs-location" type="text" placeholder="e.g. Bengaluru"
-                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F]" />
-                </div>
-                <div class="md:col-span-3">
-                    <label class="block text-sm font-semibold text-[#374151] mb-1">Resume (Optional)</label>
-                    <input id="jobs-resume" type="file" accept=".pdf,.docx"
-                        class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-[#1F3A5F]/10 file:text-[#1F3A5F]" />
-                    <select id="jobs-existing-resume"
-                        class="mt-2 w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]/25 focus:border-[#1F3A5F] text-sm">
-                        <option value="">Use latest saved resume</option>
-                    </select>
-                    <p class="mt-1 text-xs text-[#6B7280]">You can upload a new file or choose an existing resume from your database.</p>
-                </div>
-                <div class="md:col-span-2 flex items-end">
-                    <button id="jobs-search-btn" type="submit" class="w-full btn btn-primary">Find Jobs</button>
-                </div>
-                <div class="md:col-span-12 flex items-center justify-between">
-                    <div class="flex items-center gap-6 flex-wrap">
-                        <label class="inline-flex items-center gap-2 text-sm text-[#4B5563]">
-                            <input id="jobs-remote-only" type="checkbox" class="rounded border-slate-300 text-[#1F3A5F] focus:ring-[#1F3A5F]/30">
-                            Remote only
+            <div class="jobs-search-card mb-6">
+                <form id="jobs-search-form" class="jobs-search-form">
+                    <div class="jobs-architecture">
+                        <div class="jobs-left-stack">
+                            <div class="jobs-field jobs-field-role">
+                                <label class="jobs-label" for="jobs-query">Role or Keyword</label>
+                                <input id="jobs-query" type="text" placeholder="e.g. Software Engineer" class="jobs-input" />
+                            </div>
+
+                            <div class="jobs-field jobs-field-location">
+                                <label class="jobs-label" for="jobs-location">Location</label>
+                                <input id="jobs-location" type="text" placeholder="e.g. Bengaluru" class="jobs-input" />
+                            </div>
+                        </div>
+
+                        <div class="jobs-right-stack">
+                            <div class="jobs-field jobs-field-resume">
+                                <label class="jobs-label" for="jobs-resume">Resume (Optional)</label>
+                                <div class="jobs-resume-stack">
+                                    <input id="jobs-resume" type="file" accept=".pdf,.docx" class="jobs-file-input" />
+                                    <select id="jobs-existing-resume" class="jobs-select">
+                                        <option value="">Use latest saved resume</option>
+                                    </select>
+                                </div>
+                                <p class="jobs-field-help">Upload a new file or choose an existing resume from your account.</p>
+                            </div>
+
+                            <div class="jobs-action-row">
+                                <button id="jobs-search-btn" type="submit" class="jobs-primary-btn">Find Jobs</button>
+                                <button id="jobs-refresh-applied" type="button" class="jobs-link-btn">Refresh Applied Jobs</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="jobs-options-row">
+                        <label class="jobs-checkbox-wrap">
+                            <input id="jobs-remote-only" type="checkbox" class="jobs-checkbox">
+                            <span>Remote only</span>
                         </label>
-                        <label class="inline-flex items-center gap-2 text-sm text-[#4B5563]">
-                            <input id="jobs-use-resume" type="checkbox" class="rounded border-slate-300 text-[#1F3A5F] focus:ring-[#1F3A5F]/30">
-                            Use resume analysis
+                        <label class="jobs-checkbox-wrap">
+                            <input id="jobs-use-resume" type="checkbox" class="jobs-checkbox">
+                            <span>Use resume analysis</span>
                         </label>
                     </div>
-                    <button id="jobs-refresh-applied" type="button" class="text-sm font-semibold text-[#1F3A5F] hover:underline">Refresh Applied Jobs</button>
-                </div>
-            </form>
+                </form>
+            </div>
+
+            <div id="jobs-status" class="hidden mb-4 text-sm"></div>
+
+            <div id="jobs-recommended-roles" class="hidden mb-4 bg-white border border-slate-100 rounded-xl p-4 shadow-sm"></div>
+
+            <div id="jobs-grid" class="grid gap-4 md:grid-cols-2"></div>
         </div>
-
-        <div id="jobs-status" class="hidden mb-4 text-sm"></div>
-
-        <div id="jobs-recommended-roles" class="hidden mb-4 bg-white border border-slate-100 rounded-xl p-4 shadow-sm"></div>
-
-        <div id="jobs-grid" class="grid gap-4 md:grid-cols-2"></div>
     `;
 
     initJobsPortalEvents();
@@ -1124,21 +1339,21 @@ function renderJobCard(job, isApplied) {
     const buttonLabel = isApplied ? 'Applied' : 'Apply';
 
     return `
-        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+        <div class="job-card job-discovery-card">
             <div class="flex items-start justify-between gap-3 mb-2">
                 <h3 class="text-lg font-bold text-[#1E1E1E] leading-tight">${safeTitle}</h3>
-                ${job.is_remote ? '<span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">Remote</span>' : ''}
+                ${job.is_remote ? '<span class="jobs-remote-chip">Remote</span>' : ''}
             </div>
-            <p class="text-sm text-[#374151] font-semibold mb-1">${safeCompany}</p>
-            <p class="text-sm text-[#6B7280] mb-3">${safeLocation}</p>
-            <p class="text-sm text-[#4B5563] mb-4">${description}${description.length >= 230 ? '...' : ''}</p>
-            <div class="flex items-center justify-between gap-3">
-                <div class="text-xs text-[#6B7280]">
+            <p class="text-sm text-[#374151] font-semibold mb-1 jobs-company">${safeCompany}</p>
+            <p class="text-sm text-[#6B7280] mb-3 jobs-location">${safeLocation}</p>
+            <p class="text-sm text-[#4B5563] mb-4 jobs-description">${description}${description.length >= 230 ? '...' : ''}</p>
+            <div class="flex items-center justify-between gap-3 jobs-card-footer">
+                <div class="text-xs text-[#6B7280] jobs-meta-line">
                     <span class="mr-3">${safeSource}</span>
                     <span>${safeType}</span>
                 </div>
                 <button
-                    class="apply-job-btn px-4 py-2 rounded-lg text-sm font-semibold ${isApplied ? 'bg-slate-200 text-slate-500 cursor-not-allowed' : 'bg-[#1F3A5F] text-white hover:bg-[#16304d]'}"
+                    class="apply-job-btn jobs-apply-btn ${isApplied ? 'jobs-apply-btn-disabled' : 'jobs-apply-btn-active'}"
                     data-job='${encodeURIComponent(JSON.stringify(job))}'
                     ${isApplied ? 'disabled' : ''}
                 >${buttonLabel}</button>
@@ -1173,7 +1388,7 @@ function bindApplyButtons(appliedUrls) {
 
             appliedUrls.add(job.url);
             btn.disabled = true;
-            btn.className = 'apply-job-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-200 text-slate-500 cursor-not-allowed';
+            btn.className = 'apply-job-btn jobs-apply-btn jobs-apply-btn-disabled';
             btn.textContent = 'Applied';
 
             window.open(job.url, '_blank', 'noopener,noreferrer');
@@ -1420,12 +1635,15 @@ async function editProfile() {
         
         const fullName = document.getElementById('edit-fullName').value;
         const phone = document.getElementById('edit-phone').value;
+        const user = Storage.getUser();
+        const profilePicture = user?.profilePicture || null;
         
         showNotification('Updating profile...', 'info');
         
         const updateResponse = await API.updateProfile({
             fullName,
-            phone
+            phone,
+            profilePicture
         });
         
         if (updateResponse.success) {
@@ -1603,4 +1821,10 @@ window.refreshCalendar = function() {
         window.dashboardCalendar.refetchEvents();
         updateUpcomingSessions();
     }
+};
+
+window.refreshDashboardAnalytics = async function() {
+    await loadDashboardStats();
+    await initPerformanceChart();
+    window.refreshCalendar();
 };
